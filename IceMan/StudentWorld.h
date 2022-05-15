@@ -14,12 +14,34 @@
 class StudentWorld : public GameWorld
 {
 private:
-  std::shared_ptr<Iceman> ice_man;
   std::shared_ptr<Ice> ice[64][60];
+  std::shared_ptr<Iceman> ice_man;
   void deleteIce(const unsigned int x, const unsigned int y) {
-    if (y == 60) return;
-    if (ice[x][y].use_count() == 0) return;
-    ice[x][y]->setVisible(false);
+    if (y >= 60) return;
+    if (ice[x][y].use_count() <= 0) return;
+
+    switch (ice_man->getDirection()) {
+      case Actor::up : //FIXME
+        for (int i = 0; i < 4; ++i) {
+          ice[x + i][y + 3].reset();
+        }
+        break;
+      case Actor::down :
+        for (int i = 0; i < 4; ++i) {
+          ice[x + i][y].reset();
+        }
+        break;
+      case Actor::right : //FIXME
+        for (int i = 0; i < 4; ++i) {
+          ice[x + 3][y + i].reset();
+        }
+        break;
+      case Actor::left :
+        for (int i = 0; i < 4; ++i) {
+          ice[x][y + i].reset();
+        }
+        break;
+    }
   }
 public:
 	StudentWorld(std::string assetDir)

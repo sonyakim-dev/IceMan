@@ -21,7 +21,7 @@ private:
 class Ice : public Actor {
 public:
   Ice(int startX, int startY, StudentWorld* stud_world)
-    : Actor(IID_ICE, startX, startY, stud_world, right, 0.25, 3) {}
+    : Actor(IID_ICE, startX, startY, stud_world, none, 0.25, 3) {}
   virtual ~Ice() {}
   virtual void doSomething() override {}
   

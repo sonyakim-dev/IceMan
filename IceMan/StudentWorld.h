@@ -13,53 +13,11 @@ class StudentWorld : public GameWorld
 {
 private:
   std::shared_ptr<Ice> ice[64][64];
-  std::shared_ptr<Iceman> ice_man;
-  void deleteIce(const unsigned int& x, const unsigned int& y) {
-    if (x >= 64 || y >= 60) return;
-
-    switch (ice_man->getDirection()) {
-      case Actor::up :
-        for (int i = 0; i < 4; ++i) {
-          if (ice[x + i][y + 3]) {
-            playSound(SOUND_DIG);
-            ice[x + i][y + 3].reset();
-          }
-        }
-        break;
-        
-      case Actor::down :
-        for (int i = 0; i < 4; ++i) {
-          if (ice[x + i][y]) {
-            playSound(SOUND_DIG);
-            ice[x + i][y].reset();
-          }
-        }
-        break;
-        
-      case Actor::right :
-        for (int i = 0; i < 4; ++i) {
-          if (ice[x + 3][y + i]) {
-            playSound(SOUND_DIG);
-            ice[x + 3][y + i].reset();
-          }
-        }
-        break;
-        
-      case Actor::left :
-        for (int i = 0; i < 4; ++i) {
-          if (ice[x][y + i]) {
-            playSound(SOUND_DIG);
-            ice[x][y + i].reset();
-          }
-        }
-        break;
-    }
-  }
+  Iceman* ice_man;
 public:
 	StudentWorld(std::string assetDir)
-		: GameWorld(assetDir)
-	{
-	}
+		: GameWorld(assetDir) { }
+  virtual ~StudentWorld() { }
 
 	virtual int init() override
 	{
@@ -74,7 +32,7 @@ public:
     }
     
     // initialize iceman
-    ice_man = std::make_shared<Iceman>(this);
+    ice_man = new Iceman(this);
     ice_man->setVisible(true);
     
     
@@ -92,7 +50,7 @@ public:
 //    return GWSTATUS_FINISHED_LEVEL;
 
     ice_man->doSomething();
-    deleteIce(ice_man->getX(), ice_man->getY());
+//    deleteIce(ice_man->getX(), ice_man->getY());
     
     return GWSTATUS_CONTINUE_GAME;
 	}
@@ -100,7 +58,15 @@ public:
   
 	virtual void cleanUp() override
 	{
+    delete ice_man;
+    for (int i = 0; i < 64; ++i) {
+      for (int j = 0; j < 64; ++j) {
+        ice[i][j].reset();
+      }
+    }
 	}
+  
+  void deleteIce(const unsigned int& x, const unsigned int& y, const int& dir);
 };
 
 #endif // STUDENTWORLD_H_

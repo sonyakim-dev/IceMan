@@ -13,31 +13,43 @@ void Iceman::doSomething() {
   if (getWorld()->getKey(ch) == true) {
     switch (ch) {
       case KEY_PRESS_UP :
+        if (getDirection() == up) {
+          moveTo(getX(), (getY() == 60) ? getY() : getY() + 1);
+          getWorld()->deleteIce(getX(), getY(), KEY_PRESS_UP);
+        } // updated Page 28 Part C
         setDirection(up);
-        moveTo(getX(), (getY()==60) ? getY() : getY()+1);
         break;
 
       case KEY_PRESS_DOWN :
+        if (getDirection() == down) {
+          moveTo(getX(), (getY() == 0) ? getY() : getY() - 1);
+          getWorld()->deleteIce(getX(), getY(), KEY_PRESS_DOWN);
+        }
         setDirection(down);
-        moveTo(getX(), (getY()==0) ? getY() : getY()-1);
         break;
-        
+            
       case KEY_PRESS_LEFT :
+        if (getDirection() == left) {
+          moveTo((getX() == 0) ? getX() : getX() - 1, getY());
+          getWorld()->deleteIce(getX(), getY(), KEY_PRESS_LEFT);
+        }
         setDirection(left);
-        moveTo((getX()==0) ? getX() : getX()-1, getY());
         break;
-        
+            
       case KEY_PRESS_RIGHT :
+        if (getDirection() == right) {
+          moveTo((getX() == 60) ? getX() : getX() + 1, getY());
+          getWorld()->deleteIce(getX(), getY(), KEY_PRESS_RIGHT);
+        }
         setDirection(right);
-        moveTo((getX()==60) ? getX() : getX()+1, getY());
         break;
         
       case KEY_PRESS_SPACE :
-        
+        // completely annoyed and abort th curr lev
         break;
       
       case KEY_PRESS_ESCAPE :
-        
+        // fire squirt(add Squirt obj)
         break;
     }
   }

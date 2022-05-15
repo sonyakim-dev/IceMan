@@ -6,6 +6,7 @@
 #include "Actor.h"
 #include <string>
 #include <memory>
+#include <cmath>
 
 
 // Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp
@@ -15,7 +16,11 @@ class StudentWorld : public GameWorld
 private:
   std::shared_ptr<Iceman> ice_man;
   std::shared_ptr<Ice> ice[64][60];
-  void deleteIce(const unsigned int x, const unsigned int y);
+  void deleteIce(const unsigned int x, const unsigned int y) {
+    if (y == 60) return;
+    if (ice[x][y].use_count() == 0) return;
+    ice[x][y]->setVisible(false);
+  }
 public:
 	StudentWorld(std::string assetDir)
 		: GameWorld(assetDir)
@@ -37,7 +42,8 @@ public:
     // initialize iceman
     ice_man = std::make_shared<Iceman>(this);
     ice_man->setVisible(true);
-
+    
+    
     
     return GWSTATUS_CONTINUE_GAME;
   }
@@ -52,7 +58,7 @@ public:
 //    return GWSTATUS_FINISHED_LEVEL;
 
     ice_man->doSomething();
-    
+    deleteIce(ice_man->getX(), ice_man->getY());
     
     return GWSTATUS_CONTINUE_GAME;
 	}

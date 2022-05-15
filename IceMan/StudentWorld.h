@@ -14,7 +14,7 @@ class StudentWorld : public GameWorld
 private:
   std::shared_ptr<Ice> ice[64][64];
   std::shared_ptr<Iceman> ice_man;
-  void deleteIce(const unsigned int x, const unsigned int y) {
+  void deleteIce(const unsigned int& x, const unsigned int& y) {
     if (x >= 64 || y >= 60) return;
 
     switch (ice_man->getDirection()) {
@@ -67,7 +67,7 @@ public:
     for (int x = 0; x < 64; ++x) {
       for (int y = 0; y < 60; ++y) {
         if ((x < 30 || x > 33) || (y < 4 || y > 59)) {
-          ice[x][y] = std::make_shared<Ice>(x, y, this);
+          ice[x][y] = std::make_shared<Ice>(x, y);
           ice[x][y]->setVisible(true);
         }
       }

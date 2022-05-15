@@ -5,14 +5,17 @@
 #include "GameConstants.h"
 #include "Actor.h"
 #include <string>
+#include <memory>
+
 
 // Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp
 
 class StudentWorld : public GameWorld
 {
 private:
-  Iceman* ice_man;
-  Ice* ice[63][59];
+  std::shared_ptr<Iceman> ice_man;
+  std::shared_ptr<Ice> ice[64][60];
+  void deleteIce(const unsigned int x, const unsigned int y);
 public:
 	StudentWorld(std::string assetDir)
 		: GameWorld(assetDir)
@@ -21,16 +24,20 @@ public:
 
 	virtual int init() override
 	{
-    for (int x = 0; x < 63; ++x) {
-      for (int y = 0; y < 59; ++y) {
-        ice[x][y] = new Ice(x, y, this);
-        if ((x < 30 || x > 33) || (y < 4 || y > 59))
+    // initialize ice
+    for (int x = 0; x < 64; ++x) {
+      for (int y = 0; y < 60; ++y) {
+        if ((x < 30 || x > 33) || (y < 4 || y > 59)) {
+          ice[x][y] = std::make_shared<Ice>(x, y, this);
           ice[x][y]->setVisible(true);
+        }
       }
     }
     
-    ice_man = new Iceman(this);
+    // initialize iceman
+    ice_man = std::make_shared<Iceman>(this);
     ice_man->setVisible(true);
+
     
     return GWSTATUS_CONTINUE_GAME;
   }
@@ -44,7 +51,8 @@ public:
 //    return GWSTATUS_PLAYER_DIED;
 //    return GWSTATUS_FINISHED_LEVEL;
 
-      ice_man->doSomething();
+    ice_man->doSomething();
+    
     
     return GWSTATUS_CONTINUE_GAME;
 	}
@@ -53,8 +61,6 @@ public:
 	virtual void cleanUp() override
 	{
 	}
-
-private:
 };
 
 #endif // STUDENTWORLD_H_

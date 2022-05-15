@@ -12,7 +12,7 @@ public:
     : GraphObject(imageID, startX, startY, dir, size, depth), stud_world(stud_world) {}
   virtual ~Actor() {}
   virtual void doSomething() = 0;
-  StudentWorld* getWorld() { return stud_world; }
+  StudentWorld* getWorld() const { return stud_world; }
 private:
   StudentWorld* stud_world;
 };
@@ -24,6 +24,7 @@ public:
     : Actor(IID_ICE, startX, startY, stud_world, right, 0.25, 3) {}
   virtual ~Ice() {}
   virtual void doSomething() override {}
+  
 };
 
 
@@ -32,6 +33,7 @@ public:
   Iceman(StudentWorld* stud_world) : Actor(IID_PLAYER, 30, 60, stud_world, right, 1.0, 0) {}
   virtual ~Iceman() {}
   virtual void doSomething() override;
+  bool isAlive() const;
 private:
   
 };

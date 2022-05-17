@@ -8,18 +8,21 @@ class StudentWorld;
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 class Actor : public GraphObject {
 public:
-  Actor(int imageID, int startX, int startY, Direction dir = right, double size = 1.0, unsigned int depth = 0)
-    : GraphObject(imageID, startX, startY, dir, size, depth) {}
+  Actor(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
+    : stud_world(stud_world), GraphObject(imageID, startX, startY, dir, size, depth) {}
   virtual ~Actor() {}
   virtual void doSomething() = 0;
+  virtual StudentWorld* getWorld() const { return stud_world; }
+
 private:
+    StudentWorld* stud_world;
 };
 
 
 class Ice : public Actor {
 public:
-  Ice(int startX, int startY)
-    : Actor(IID_ICE, startX, startY, none, 0.25, 3) {}
+  Ice(int startX, int startY, StudentWorld* stud_world)
+    : Actor(IID_ICE, startX, startY, stud_world, none, 0.25, 3) {}
   virtual ~Ice() {}
   virtual void doSomething() override {}
 };
@@ -27,18 +30,18 @@ public:
 
 class Iceman : public Actor {
 private:
-    StudentWorld* stud_world;
+    StudentWorld* stud_world; // to get ice_man
     int i_hitPoints;
     int i_waters;
     int i_golds;
     int i_sonars;
 public:
   Iceman(StudentWorld* stud_world) : i_hitPoints(100), i_waters(5), i_golds(0), i_sonars(1),
-      Actor(IID_PLAYER, 30, 60, right, 1.0, 0), stud_world(stud_world) {}
+      Actor(IID_PLAYER, 30, 60, stud_world, right, 1.0, 0), stud_world(stud_world) {}
   virtual ~Iceman() { }
   virtual void doSomething() override;
   bool isAlive() const;
-  StudentWorld* getWorld() const { return stud_world; }
+  void addGold() { i_golds += 1; }
   int getHP(int hitpoints) { return i_hitPoints = hitpoints; }
   int getWater() { return i_waters; }
   int getGold() { return i_golds; }
@@ -47,20 +50,19 @@ public:
 
 class Goodies : public Actor {
 public:
-    Goodies(int imageID, int startX, int startY, Direction dir = right, double size = 1.0, unsigned int depth = 0) 
-        : Actor(imageID, startX, startY, dir, size, depth){}
+    Goodies(int imageID, int startX, int startY, StudentWorld* stud_world,  Direction dir = right, double size = 1.0, unsigned int depth = 0)
+        : Actor(imageID, startX, startY, stud_world, dir, size, depth){}
     virtual ~Goodies() {}
-    virtual void doSomething() = 0;
-  
+    virtual void doSomething() override {}
 private:
 };
 
 class Gold : public Goodies {
 public:
-    Gold(int startX, int startY) 
-        : Goodies(IID_GOLD, startX, startY, right, 1, 2) {}
+    Gold(int startX, int startY, StudentWorld* stud_world)
+        : Goodies(IID_GOLD, startX, startY, stud_world, right, 1, 2) {}
     virtual ~Gold() {}
-    void doSomething() override;
+    virtual void doSomething() override;
 };
 
 

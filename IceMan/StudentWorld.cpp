@@ -32,7 +32,7 @@ void StudentWorld::initIce() {
     for (int x = 0; x < 64; ++x) {
         for (int y = 0; y < 60; ++y) {
             if ((x < 30 || x > 33) || (y < 4 || y > 59)) {
-                ice[x][y] = std::make_shared<Ice>(x, y);
+                ice[x][y] = std::make_shared<Ice>(x, y, this);
                 ice[x][y]->setVisible(true);
             }
         }
@@ -42,7 +42,7 @@ void StudentWorld::initIce() {
 void StudentWorld::initGold() {
   std::srand((unsigned int)std::time(0));
   
-  gold = std::make_shared<Gold>(rand() % 61 , rand() % 57);
+  gold = std::make_shared<Gold>(rand() % 61 , rand() % 57, this);
   gold->setVisible(true);
 }
 
@@ -84,6 +84,10 @@ void StudentWorld::deleteIce(const unsigned int& x, const unsigned int& y, const
       }
       break;
   }
+}
+
+void StudentWorld::deleteGold() {
+
 }
 
 // Students:  Add code to this file (if you wish), StudentWorld.h, Actor.h and Actor.cpp

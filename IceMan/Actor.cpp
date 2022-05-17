@@ -6,6 +6,17 @@ bool Iceman::isAlive() const {
   return getWorld()->getLives() > 0;
 }
 
+void Gold::doSomething() {
+    if (getX() == getWorld()->getIce_man()->getX() && getY() == getWorld()->getIce_man()->getY())
+    {
+        //playSound(SOUND_PROTESTER_FOUND_GOLD);       
+        if (isVisible()) {
+            getWorld()->getIce_man()->addGold();
+            setVisible(false);
+        }
+    }
+}
+
 void Iceman::doSomething() {
   if (!isAlive()) return;
   
@@ -55,6 +66,4 @@ void Iceman::doSomething() {
   }
 }
 
-void Gold::doSomething() {
-  
-}
+

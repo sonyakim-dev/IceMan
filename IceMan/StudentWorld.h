@@ -27,6 +27,10 @@ public:
   
   void setDisplayText();
 
+  void deleteGold();
+
+  std::shared_ptr<Iceman> getIce_man() { return ice_man; }
+
 	virtual int init() override {
 
     // initialize ice
@@ -54,6 +58,8 @@ public:
 //    return GWSTATUS_PLAYER_DIED;
 
     ice_man->doSomething();
+    setDisplayText();
+    gold->doSomething();
     
     //return GWSTATUS_FINISHED_LEVEL;
     

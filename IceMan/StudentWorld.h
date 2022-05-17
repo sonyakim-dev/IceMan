@@ -13,29 +13,28 @@ class StudentWorld : public GameWorld
 {
 private:
   std::shared_ptr<Ice> ice[64][64];
-  Iceman* ice_man;
+  std::shared_ptr<Iceman> ice_man;
+  int currentGameLevel{};
 public:
 	StudentWorld(std::string assetDir)
 		: GameWorld(assetDir) { }
-  virtual ~StudentWorld() { }
+    virtual ~StudentWorld() {};
 
-	virtual int init() override
-	{
+    void initIce();
+
+    void setDisplayText();
+
+	virtual int init() override {
+
     // initialize ice
-    for (int x = 0; x < 64; ++x) {
-      for (int y = 0; y < 60; ++y) {
-        if ((x < 30 || x > 33) || (y < 4 || y > 59)) {
-          ice[x][y] = std::make_shared<Ice>(x, y);
-          ice[x][y]->setVisible(true);
-        }
-      }
-    }
+    initIce();
     
     // initialize iceman
-    ice_man = new Iceman(this);
+    ice_man = std::make_shared<Iceman>(this);
     ice_man->setVisible(true);
-    
-    
+
+    // initialize score board
+    setDisplayText();
     
     return GWSTATUS_CONTINUE_GAME;
   }
@@ -51,6 +50,7 @@ public:
 
     ice_man->doSomething();
 //    deleteIce(ice_man->getX(), ice_man->getY());
+    //return GWSTATUS_FINISHED_LEVEL;
     
     return GWSTATUS_CONTINUE_GAME;
 	}
@@ -58,12 +58,6 @@ public:
   
 	virtual void cleanUp() override
 	{
-    delete ice_man;
-    for (int i = 0; i < 64; ++i) {
-      for (int j = 0; j < 64; ++j) {
-        ice[i][j].reset();
-      }
-    }
 	}
   
   void deleteIce(const unsigned int& x, const unsigned int& y, const int& dir);

@@ -16,7 +16,7 @@ void Iceman::doSomething() {
         if (getDirection() == up) {
           moveTo(getX(), (getY() == 60) ? getY() : getY() + 1);
           getWorld()->deleteIce(getX(), getY(), KEY_PRESS_UP);
-        } // updated Page 28 Part C
+        } 
         setDirection(up);
         break;
 
@@ -45,11 +45,12 @@ void Iceman::doSomething() {
         break;
         
       case KEY_PRESS_SPACE :
-        // completely annoyed and abort th curr lev
+          // fire squirt(add Squirt obj)
         break;
       
       case KEY_PRESS_ESCAPE :
-        // fire squirt(add Squirt obj)
+          // completely annoyed and abort th curr lev
+          GWSTATUS_FINISHED_LEVEL;
         break;
     }
   }

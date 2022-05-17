@@ -1,5 +1,8 @@
 #include "StudentWorld.h"
 #include <string>
+#include <cstdlib>
+#include <ctime>
+
 using namespace std;
 
 GameWorld* createStudentWorld(string assetDir)
@@ -36,8 +39,14 @@ void StudentWorld::initIce() {
     }
 }
 
+void StudentWorld::initGold() {
+  std::srand((unsigned int)std::time(0));
+  
+  gold = std::make_shared<Gold>(rand() % 61 , rand() % 57);
+  gold->setVisible(true);
+}
+
 void StudentWorld::deleteIce(const unsigned int& x, const unsigned int& y, const int& dir) {
-//    if (x >= 64 || y >= 60) return;
   switch (dir) {
     case KEY_PRESS_UP :
       for (int i = 0; i < 4; ++i) {

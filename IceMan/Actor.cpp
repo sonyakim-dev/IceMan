@@ -50,8 +50,11 @@ void Iceman::doSomething() {
       
       case KEY_PRESS_ESCAPE :
           // completely annoyed and abort th curr lev
-          GWSTATUS_FINISHED_LEVEL;
         break;
     }
   }
+}
+
+void Gold::doSomething() {
+  
 }

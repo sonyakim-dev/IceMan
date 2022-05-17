@@ -14,15 +14,18 @@ class StudentWorld : public GameWorld
 private:
   std::shared_ptr<Ice> ice[64][64];
   std::shared_ptr<Iceman> ice_man;
+  std::shared_ptr<Gold> gold;
   int currentGameLevel{};
 public:
 	StudentWorld(std::string assetDir)
 		: GameWorld(assetDir) { }
-    virtual ~StudentWorld() {};
+  virtual ~StudentWorld() {};
 
-    void initIce();
+  void initIce();
 
-    void setDisplayText();
+  void initGold();
+  
+  void setDisplayText();
 
 	virtual int init() override {
 
@@ -36,6 +39,8 @@ public:
     // initialize score board
     setDisplayText();
     
+    initGold();
+    
     return GWSTATUS_CONTINUE_GAME;
   }
 
@@ -44,12 +49,12 @@ public:
   {
     // This code is here merely to allow the game to build, run, and terminate after you hit enter a few times.
     // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
+    
 //    decLives();
 //    return GWSTATUS_PLAYER_DIED;
-//    return GWSTATUS_FINISHED_LEVEL;
 
     ice_man->doSomething();
-//    deleteIce(ice_man->getX(), ice_man->getY());
+    
     //return GWSTATUS_FINISHED_LEVEL;
     
     return GWSTATUS_CONTINUE_GAME;

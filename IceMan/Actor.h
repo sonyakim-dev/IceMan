@@ -33,10 +33,9 @@ private:
     int i_golds;
     int i_sonars;
 public:
-
-    Iceman(StudentWorld* stud_world) : i_hitPoints(100), i_waters(5), i_golds(0), i_sonars(1),
+  Iceman(StudentWorld* stud_world) : i_hitPoints(100), i_waters(5), i_golds(0), i_sonars(1),
       Actor(IID_PLAYER, 30, 60, right, 1.0, 0), stud_world(stud_world) {}
-  virtual ~Iceman() { delete stud_world; }
+  virtual ~Iceman() { }
   virtual void doSomething() override;
   bool isAlive() const;
   StudentWorld* getWorld() const { return stud_world; }
@@ -51,16 +50,17 @@ public:
     Goodies(int imageID, int startX, int startY, Direction dir = right, double size = 1.0, unsigned int depth = 0) 
         : Actor(imageID, startX, startY, dir, size, depth){}
     virtual ~Goodies() {}
-    virtual void doSomething() {};
+    virtual void doSomething() = 0;
+  
 private:
 };
 
 class Gold : public Goodies {
 public:
     Gold(int startX, int startY) 
-        : Goodies(IID_GOLD, startX, startY, none, 1, 0) {}
-    ~Gold() {}
-    void doSomething() override {};
+        : Goodies(IID_GOLD, startX, startY, right, 1, 2) {}
+    virtual ~Gold() {}
+    void doSomething() override;
 };
 
 

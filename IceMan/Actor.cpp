@@ -6,15 +6,32 @@ bool Iceman::isAlive() const {
   return getWorld()->getLives() > 0;
 }
 
+bool Gold::isInRange(const unsigned int& x, const unsigned int& y) {
+    int x2 = x;
+    int y2 = y;
+   /* if (x > getX())
+        x2 -= 4;
+    if (y > getY())
+        y2 -= 4;*/
+    if (sqrt(pow((getX())-(x2), 2) + pow((getY())-(y2), 2)) <= 4.0)
+        return true;
+    return false;
+}
+
 void Gold::doSomething() {
-    if (getX() == getWorld()->getIce_man()->getX() && getY() == getWorld()->getIce_man()->getY())
+    unsigned int x = getWorld()->getIce_man()->getX();
+    unsigned int y = getWorld()->getIce_man()->getY();
+    if (isInRange(x, y))
     {
+        setVisible(false);
         //playSound(SOUND_PROTESTER_FOUND_GOLD);       
-        if (isVisible()) {
-            getWorld()->getIce_man()->addGold();
-            setVisible(false);
-        }
+        //if (isVisible()) {
+        //    getWorld()->getIce_man()->addGold();
+        //    setVisible(false);
+        //}
     }
+    else
+        setVisible(true);
 }
 
 void Iceman::doSomething() {

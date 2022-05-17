@@ -2,6 +2,7 @@
 #define ACTOR_H_
 
 #include "GraphObject.h"
+#include <cmath>
 
 class StudentWorld;
 
@@ -54,6 +55,7 @@ public:
         : Actor(imageID, startX, startY, stud_world, dir, size, depth){}
     virtual ~Goodies() {}
     virtual void doSomething() override {}
+    virtual bool isInRange(const unsigned int& x, const unsigned int& y) = 0;
 private:
 };
 
@@ -63,6 +65,9 @@ public:
         : Goodies(IID_GOLD, startX, startY, stud_world, right, 1, 2) {}
     virtual ~Gold() {}
     virtual void doSomething() override;
+
+    //later in future fix it once we do the protestors
+    bool isInRange(const unsigned int& x, const unsigned int& y) override;
 };
 
 

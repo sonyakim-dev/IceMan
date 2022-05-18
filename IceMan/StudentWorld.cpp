@@ -39,7 +39,7 @@ void StudentWorld::initIce() {
     }
 }
 
-void StudentWorld::initGold() {
+void StudentWorld::initGold() { //Hi Chris
   std::srand((unsigned int)std::time(0));
   
   gold = std::make_shared<Gold>(rand() % 61 , rand() % 57, this);

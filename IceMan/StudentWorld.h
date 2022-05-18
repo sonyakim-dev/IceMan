@@ -33,7 +33,7 @@ public:
 
 	virtual int init() override {
 
-    // initialize ice
+    // initialize ice // Hi Sonya
     initIce();
     
     // initialize iceman

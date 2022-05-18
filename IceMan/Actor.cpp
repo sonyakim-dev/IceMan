@@ -7,12 +7,9 @@ bool Iceman::isAlive() const {
 }
 
 bool Gold::isInRange(const unsigned int& x, const unsigned int& y) {
-    int x2 = x;
+    int x2 = x; // do something
     int y2 = y;
-   /* if (x > getX())
-        x2 -= 4;
-    if (y > getY())
-        y2 -= 4;*/
+   
     if (sqrt(pow((getX())-(x2), 2) + pow((getY())-(y2), 2)) <= 4.0)
         return true;
     return false;

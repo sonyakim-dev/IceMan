@@ -1,7 +1,4 @@
 #include "StudentWorld.h"
-#include <string>
-#include <cstdlib>
-#include <ctime>
 
 using namespace std;
 
@@ -11,18 +8,11 @@ GameWorld* createStudentWorld(string assetDir)
 }
 
 void StudentWorld::setDisplayText() {
-    int level = getLevel();
-    int lives = getLives();
     int health = ice_man->getHP(10);
-    int squirts = ice_man->getWater();
-    int gold = ice_man->getGold();
-    int barrelsLeft = 0;
-    int sonar = ice_man->getSonars();
-    int score = getScore();
 
-    string s = "Lvl: " + to_string(level) + " Lives: " + to_string(lives) + " Hlth: " + to_string(health) + " Wtr: " +
-        to_string(squirts) + " Gld: " + to_string(gold) + " Oil Left: " + to_string(barrelsLeft) + "  Sonar: " + to_string(sonar) +
-        " Scr: " + to_string(score);
+    string s = "Lvl: " + to_string(getLevel()) + " Lives: " + to_string(getLives()) + " Hlth: " + to_string(health) + " Wtr: " +
+        to_string(ice_man->getWater()) + " Gld: " + to_string(ice_man->getGold()) + " Oil Left: " + to_string(oil_left) + "  Sonar: " + to_string(ice_man->getSonars()) +
+        " Scr: " + to_string(getScore());
 
     setGameStatText(s);
 }
@@ -40,48 +30,57 @@ void StudentWorld::initIce() {
 }
 
 void StudentWorld::initGold() { //Hi Chris
-  std::srand((unsigned int)std::time(0));
-  
-  gold = std::make_shared<Gold>(rand() % 61 , rand() % 57, this);
+  gold = std::make_shared<Gold>(rand() % 61 , rand() % 57, this); // FIX: should not appear in the middle aisle
   gold->setVisible(true);
 }
 
+void StudentWorld::initSonar() {
+  sonar = std::make_shared<Sonar>(rand() % 61 , rand() % 57, this); // FIX: should not appear in the middle aisle
+  sonar->setVisible(true);
+}
+
 void StudentWorld::deleteIce(const unsigned int& x, const unsigned int& y, const int& dir) {
+  bool isThereIce = false;
+  
   switch (dir) {
     case KEY_PRESS_UP :
       for (int i = 0; i < 4; ++i) {
         if (ice[x + i][y + 3]) {
-          playSound(SOUND_DIG);
+          isThereIce = true;
           ice[x + i][y + 3].reset();
         }
       }
+      if (isThereIce) playSound(SOUND_DIG);
       break;
       
     case KEY_PRESS_DOWN :
       for (int i = 0; i < 4; ++i) {
         if (ice[x + i][y]) {
-          playSound(SOUND_DIG);
+          isThereIce = true;
           ice[x + i][y].reset();
         }
       }
+      if (isThereIce) playSound(SOUND_DIG);
       break;
       
     case KEY_PRESS_RIGHT :
       for (int i = 0; i < 4; ++i) {
         if (ice[x + 3][y + i]) {
-          playSound(SOUND_DIG);
+          isThereIce = true;
           ice[x + 3][y + i].reset();
         }
       }
+      if (isThereIce) playSound(SOUND_DIG);
       break;
       
     case KEY_PRESS_LEFT :
       for (int i = 0; i < 4; ++i) {
         if (ice[x][y + i]) {
-          playSound(SOUND_DIG);
+          isThereIce = true;
           ice[x][y + i].reset();
         }
       }
+      if (isThereIce) playSound(SOUND_DIG);
       break;
   }
 }

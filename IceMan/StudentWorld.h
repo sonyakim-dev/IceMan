@@ -17,18 +17,12 @@ private:
   std::shared_ptr<Gold> gold;
   int currentGameLevel{};
 public:
-	StudentWorld(std::string assetDir)
-		: GameWorld(assetDir) { }
+	StudentWorld(std::string assetDir) : GameWorld(assetDir) { }
   virtual ~StudentWorld() {};
 
   void initIce();
-
   void initGold();
-  
   void setDisplayText();
-
-  void deleteGold();
-
   std::shared_ptr<Iceman> getIce_man() { return ice_man; }
 
 	virtual int init() override {

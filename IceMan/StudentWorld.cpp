@@ -86,8 +86,5 @@ void StudentWorld::deleteIce(const unsigned int& x, const unsigned int& y, const
   }
 }
 
-void StudentWorld::deleteGold() {
-
-}
 
 // Students:  Add code to this file (if you wish), StudentWorld.h, Actor.h and Actor.cpp

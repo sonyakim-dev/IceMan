@@ -4,19 +4,21 @@
 #include "GraphObject.h"
 #include <cmath>
 
-class StudentWorld; // dsdfsdf
+class StudentWorld;
 
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 class Actor : public GraphObject {
 public:
   Actor(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
-    : stud_world(stud_world), GraphObject(imageID, startX, startY, dir, size, depth) {}
+    : GraphObject(imageID, startX, startY, dir, size, depth), stud_world(stud_world) {}
   virtual ~Actor() {}
   virtual void doSomething() = 0;
   virtual StudentWorld* getWorld() const { return stud_world; }
-
+  bool isActive() const { return active; }
+  void setUnactive() { active = false; }
 private:
-    StudentWorld* stud_world;
+  bool active = true;
+  StudentWorld* stud_world;
 };
 
 
@@ -41,8 +43,9 @@ public:
       Actor(IID_PLAYER, 30, 60, stud_world, right, 1.0, 0), stud_world(stud_world) {}
   virtual ~Iceman() { }
   virtual void doSomething() override;
-  bool isAlive() const;
-  void addGold() { i_golds += 1; }
+  void addGold() { ++i_golds; }
+  void addWater() { i_waters += 5; }
+  void addSonar() { ++i_sonars; }
   int getHP(int hitpoints) { return i_hitPoints = hitpoints; }
   int getWater() { return i_waters; }
   int getGold() { return i_golds; }
@@ -55,7 +58,7 @@ public:
         : Actor(imageID, startX, startY, stud_world, dir, size, depth){}
     virtual ~Goodies() {}
     virtual void doSomething() override {}
-    virtual bool isInRange(const unsigned int& x, const unsigned int& y) = 0;
+    virtual bool isInRange(const unsigned int& x, const unsigned int& y, const float& radius);
 private:
 };
 
@@ -67,7 +70,7 @@ public:
     virtual void doSomething() override;
 
     //later in future fix it once we do the protestors
-    bool isInRange(const unsigned int& x, const unsigned int& y) override;
+//    virtual bool isInRange(const unsigned int x, const unsigned int y, const float& radius) override;
 };
 
 

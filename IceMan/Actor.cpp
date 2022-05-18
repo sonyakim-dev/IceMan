@@ -2,37 +2,41 @@
 #include "StudentWorld.h"
 
 // Students:  Add code to this file (if you wish), Actor.h, StudentWorld.h, and StudentWorld.cpp
-bool Iceman::isAlive() const {
-  return getWorld()->getLives() > 0;
-}
-
-bool Gold::isInRange(const unsigned int& x, const unsigned int& y) {
-    int x2 = x; // do something
-    int y2 = y;
-   
-    if (sqrt(pow((getX())-(x2), 2) + pow((getY())-(y2), 2)) <= 4.0)
+bool Goodies::isInRange(const unsigned int& x, const unsigned int& y, const float& radius) {
+  int x2 = x, y2 = y;
+    if (sqrt(pow((getX())-(x2), 2) + pow((getY())-(y2), 2)) <= radius)
         return true;
-    return false;
+    else return false;
 }
 
 void Gold::doSomething() {
+    if (!isActive()) return;
+  
     unsigned int x = getWorld()->getIce_man()->getX();
     unsigned int y = getWorld()->getIce_man()->getY();
-    if (isInRange(x, y))
-    {
-        setVisible(false);
-        //playSound(SOUND_PROTESTER_FOUND_GOLD);       
-        //if (isVisible()) {
-        //    getWorld()->getIce_man()->addGold();
-        //    setVisible(false);
-        //}
-    }
-    else
+    if (!isVisible() && isInRange(x, y, 4.0)) {
         setVisible(true);
+        return;
+    }
+    else if (isInRange(x, y, 3.0) /*&& pickable by Iceman*/) {
+      setUnactive();
+      setVisible(false);
+      getWorld()->playSound(SOUND_GOT_GOODIE);
+      getWorld()->increaseScore(10);
+      getWorld()->getIce_man()->addGold();
+      return;
+    }
+//    else if (isInRange(x, y, 3.0) /*&& pickable by Protester*/) {
+//      setDead();
+//      setVisible(false);
+//      getWorld()->playSound(SOUND_PROTESTER_FOUND_GOLD);
+//      // 3) protestor react as bribed
+//      // 4) increase 25pts
+//    }
 }
 
 void Iceman::doSomething() {
-  if (!isAlive()) return;
+  if (!isActive()) return;
   
   int ch;
   if (getWorld()->getKey(ch) == true) {

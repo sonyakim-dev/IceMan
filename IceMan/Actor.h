@@ -2,7 +2,6 @@
 #define ACTOR_H_
 
 #include "GraphObject.h"
-#include <cmath>
 
 class StudentWorld;
 
@@ -14,8 +13,8 @@ public:
   virtual ~Actor() {}
   virtual void doSomething() = 0;
   virtual StudentWorld* getWorld() const { return stud_world; }
-  bool isActive() const { return active; }
-  void setUnactive() { active = false; }
+  bool isAlive() const { return active; }
+  void setDead() { active = false; }
   void setActive() { active = true; }
 private:
   bool active = true;
@@ -26,47 +25,57 @@ private:
 class Ice : public Actor {
 public:
   Ice(int startX, int startY, StudentWorld* stud_world)
-    : Actor(IID_ICE, startX, startY, stud_world, none, 0.25, 3) {}
+  : Actor(IID_ICE, startX, startY, stud_world, none, 0.25, 3) { setVisible(true); }
   virtual ~Ice() {}
   virtual void doSomething() override {}
 };
 
 
-class Iceman : public Actor {
+class Character : public Actor {
 private:
-  StudentWorld* stud_world; // to get ice_man
-  unsigned int i_hitPoints {100};
-  unsigned int i_waters {5};
+  int health {100};
+public:
+  Character(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
+    : Actor(imageID, startX, startY, stud_world, dir, size, depth) {}
+  virtual ~Character() { }
+  virtual void doSomething() = 0;
+  virtual void getAnnoyed(unsigned int damage) { health -= damage; }
+  virtual int getHP() const { return health; }
+};
+
+class Iceman : public Character {
+private:
   unsigned int i_golds {0};
+  unsigned int i_waters {5};
   unsigned int i_sonars {1};
 public:
-  Iceman(StudentWorld* stud_world) :
-    Actor(IID_PLAYER, 30, 60, stud_world, right, 1.0, 0), stud_world(stud_world) {}
-  virtual ~Iceman() { }
+  Iceman(StudentWorld* stud_world)
+    : Character(IID_PLAYER, 30, 60, stud_world, right, 1.0, 0) {}
+  virtual ~Iceman() { setVisible(true); }
   virtual void doSomething() override;
-  void addGold() { ++i_golds; }
-  void addWater() { i_waters += 5; }
-  void addSonar() { ++i_sonars; }
-  int getHP(int hitpoints) { return i_hitPoints = hitpoints; }
-  int getGold() const { return i_golds; }
-  int getWater() const { return i_waters; }
-  int getSonars() const { return i_sonars; }
+  virtual void addGold() { ++i_golds; }
+  virtual void addWater() { i_waters += 5; }
+  virtual void addSonar() { ++i_sonars; }
+  virtual int getGold() const { return i_golds; }
+  virtual int getWater() const { return i_waters; }
+  virtual int getSonar() const { return i_sonars; }
 };
+
 
 class Goodies : public Actor {
 public:
-    Goodies(int imageID, int startX, int startY, StudentWorld* stud_world,  Direction dir = right, double size = 1.0, unsigned int depth = 0)
+    Goodies(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
         : Actor(imageID, startX, startY, stud_world, dir, size, depth){}
     virtual ~Goodies() {}
     virtual void doSomething() override {}
-    virtual bool isInRange(const unsigned int& x, const unsigned int& y, const float& radius);
+    virtual bool isInRange(const unsigned int& x, const unsigned int& y, const float& radius) const;
 private:
 };
 
 class Oil : public Goodies {
 public:
     Oil(int startX, int startY, StudentWorld* stud_world)
-        : Goodies(IID_BARREL, startX, startY, stud_world, right, 1, 2) {}
+      : Goodies(IID_BARREL, startX, startY, stud_world, right, 1, 2) { setVisible(true); }
     virtual ~Oil() {}
     virtual void doSomething() override;
 };
@@ -74,7 +83,7 @@ public:
 class Gold : public Goodies {
 public:
     Gold(int startX, int startY, StudentWorld* stud_world)
-        : Goodies(IID_GOLD, startX, startY, stud_world, right, 1, 2) {}
+      : Goodies(IID_GOLD, startX, startY, stud_world, right, 1, 2) { setVisible(true); }
     virtual ~Gold() {}
     virtual void doSomething() override;
     //later in future fix it once we do the protestors
@@ -84,17 +93,25 @@ public:
 class Sonar : public Goodies {
 public:
     Sonar(int startX, int startY, StudentWorld* stud_world)
-        : Goodies(IID_SONAR, startX, startY, stud_world, right, 1, 2) {}
+      : Goodies(IID_SONAR, startX, startY, stud_world, right, 1, 2) { setVisible(true); }
     virtual ~Sonar() {}
     virtual void doSomething() override;
 };
 
 class Boulder : public Goodies {
-private:
 public:
     Boulder(int startX, int startY, StudentWorld* stud_world)
-        : Goodies(IID_BOULDER, startX, startY, stud_world, down, 1, 1) {}
+      : Goodies(IID_BOULDER, startX, startY, stud_world, down, 1, 1) { setVisible(true); }
     virtual ~Boulder() {}
+    virtual void doSomething() override;
+    bool isStable();
+};
+
+class Water : public Goodies {
+public:
+    Water(int startX, int startY, StudentWorld* stud_world)
+      : Goodies(IID_WATER_POOL, startX, startY, stud_world, right, 1, 2) { setVisible(true); }
+    virtual ~Water() {}
     virtual void doSomething() override;
     bool isStable();
 };

@@ -14,7 +14,7 @@ void Iceman::doSomething() {
       case KEY_PRESS_UP :
         if (getDirection() == up) {
           moveTo(getX(), (getY() == 60) ? getY() : getY() + 1);
-          getWorld()->deleteIce(getX(), getY(), KEY_PRESS_UP);
+          getWorld()->digIce(getX(), getY(), KEY_PRESS_UP);
         }
         setDirection(up);
         break;
@@ -22,7 +22,7 @@ void Iceman::doSomething() {
       case KEY_PRESS_DOWN :
         if (getDirection() == down) {
           moveTo(getX(), (getY() == 0) ? getY() : getY() - 1);
-          getWorld()->deleteIce(getX(), getY(), KEY_PRESS_DOWN);
+          getWorld()->digIce(getX(), getY(), KEY_PRESS_DOWN);
         }
         setDirection(down);
         break;
@@ -30,7 +30,7 @@ void Iceman::doSomething() {
       case KEY_PRESS_LEFT :
         if (getDirection() == left) {
           moveTo((getX() == 0) ? getX() : getX() - 1, getY());
-          getWorld()->deleteIce(getX(), getY(), KEY_PRESS_LEFT);
+          getWorld()->digIce(getX(), getY(), KEY_PRESS_LEFT);
         }
         setDirection(left);
         break;
@@ -38,7 +38,7 @@ void Iceman::doSomething() {
       case KEY_PRESS_RIGHT :
         if (getDirection() == right) {
           moveTo((getX() == 60) ? getX() : getX() + 1, getY());
-          getWorld()->deleteIce(getX(), getY(), KEY_PRESS_RIGHT);
+          getWorld()->digIce(getX(), getY(), KEY_PRESS_RIGHT);
         }
         setDirection(right);
         break;
@@ -58,14 +58,6 @@ void Iceman::doSomething() {
 }
 
 
-/*================ GOODIES ================*/
-bool Goodies::isInRange(const unsigned int& x, const unsigned int& y, const float& radius) const {
-  int goodieX = x+2, goodieY = y+2;
-    if (sqrt(pow((getX()+2)-(goodieX), 2) + pow((getY()+2)-(goodieY), 2)) <= radius)
-        return true;
-    else return false;
-}
-
 /*================ Oil ================*/
 void Oil::doSomething() {
     if (!isAlive()) return;
@@ -73,16 +65,17 @@ void Oil::doSomething() {
     auto x = getWorld()->getIce_man()->getX();
     auto y = getWorld()->getIce_man()->getY();
   
-    if (!isVisible() && isInRange(x, y, 4.0)) {
+    if (!isVisible() && getWorld()->isInRange(x, y, getX(), getY(), 4.0f)) {
         setVisible(true);
         return;
     }
-    else if (isInRange(x, y, 3.0)) {
+    // if iceman and oil is in range 3.0, take that oil!
+    else if (getWorld()->isInRange(x, y, getX(), getY(), 3.0f)) {
       setDead();
       setVisible(false);
       getWorld()->playSound(SOUND_FOUND_OIL);
       getWorld()->increaseScore(1000);
-      getWorld()->foundOil();
+      getWorld()->foundOil(); // this decrement the number of oil has to be found
       return;
     }
 }
@@ -94,11 +87,12 @@ void Gold::doSomething() {
     auto x = getWorld()->getIce_man()->getX();
     auto y = getWorld()->getIce_man()->getY();
   
-    if (!isVisible() && isInRange(x, y, 4.0)) {
+    if (!isVisible() && getWorld()->isInRange(x, y, getX(), getY(), 4.0f)) {
         setVisible(true);
         return;
     }
-    else if (isInRange(x, y, 3.0) /*&& pickable by Iceman*/) {
+    // PERM means gold is pickable by iceman
+    else if ((getWorld()->isInRange(x, y, getX(), getY(), 3.0f)) && (getState() == PERM)) {
       setDead();
       setVisible(false);
       getWorld()->playSound(SOUND_GOT_GOODIE);
@@ -106,7 +100,8 @@ void Gold::doSomething() {
       getWorld()->getIce_man()->addGold();
       return;
     }
-    else if (isInRange(x, y, 3.0) /*&& pickable by Protester*/) {
+    // TEMP means gold is pickable by protestor and it will be deleted after few ticks
+    else if (getWorld()->isInRange(x, y, getX(), getY(), 3.0f) && (getState() == TEMP)) {
       setDead();
       setVisible(false);
       getWorld()->playSound(SOUND_PROTESTER_FOUND_GOLD);
@@ -118,21 +113,35 @@ void Gold::doSomething() {
 /*================ BOULDER ================*/
 void Boulder::doSomething() {
   if (!isAlive()) return;
-  if (isStable()) return;
-  
-  // wait for 30 ticks
-}
 
-bool Boulder::isStable() {
-  for (int i = 0; i < 4; ++i) {
-    if (getWorld()->isIcy(getX() + i, getY()))
-      return true;
+  if (getState() == WAIT) {
+    // ADD: wait for 30 ticks
+    setState(FALL);
+    return;
   }
-  return false;
+  
+  if (getState() == FALL) {
+    // FIX: need to disapear after certain ticks
+    moveTo(getX(), getY()-1);
+  }
+  
+  // if there's no ice below, boulder will be in wait state.
+  (getWorld()->isIcy(getX(), getY(), getDirection())) ? setState(STABLE) : setState(WAIT);
 }
 
 /*================ SONAR ================*/
 void Sonar::doSomething() {
   if (!isAlive()) return;
   
+  auto x = getWorld()->getIce_man()->getX();
+  auto y = getWorld()->getIce_man()->getY();
+
+  if (getWorld()->isInRange(x, y, getX(), getY(), 3.0f)) {
+    setDead();
+    setVisible(false);
+    getWorld()->playSound(SOUND_GOT_GOODIE);
+    getWorld()->increaseScore(75);
+    getWorld()->getIce_man()->addSonar();
+    return;
+  }
 }

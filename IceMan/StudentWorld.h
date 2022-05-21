@@ -8,158 +8,200 @@
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
+#include <typeinfo> // used to check Type ID in isBouldery()
 
 // Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp
 
 class StudentWorld : public GameWorld
 {
 private:
-  std::shared_ptr<Ice> ice[64][64];
-  std::shared_ptr<Iceman> ice_man;
-  std::vector<std::shared_ptr<Actor>> actors;
-  int currentGameLevel {0};
-  int num_oil {0};
-//  int timeToAddProtester {0};
-//  int timeToStayProtester {0};
-  
+    std::shared_ptr<Ice> ice[64][64];
+    std::shared_ptr<Iceman> ice_man;
+    //std::vector<std::shared_ptr<Actor>> actors;
+    
+    enum type {gold, oil, sonar, boulder, water, protestor, hardcoreProtestor};
+    std::vector<std::vector<std::shared_ptr<Actor>>> actors; // work in progress
+
+
+    unsigned int num_oil{ 0 }; // num of oil left in the field
+    unsigned int num_protester{ 0 }; // num of protester to be created
+    // below is a tick counter
+    size_t timeToAddProtester{ 0 };
+    size_t timeToStaySonar{ 0 }; // std::max(100, 300 - 10 * (int)getLevel())
+    std::vector<std::pair<int, int>> boulderLocations;
 public:
-	StudentWorld(std::string assetDir) : GameWorld(assetDir) {}
-  virtual ~StudentWorld() {}
+    StudentWorld(std::string assetDir) : GameWorld(assetDir) {}
+    virtual ~StudentWorld() {}
 
-	virtual int init() override {
-    std::srand((unsigned int)std::time(NULL));
+    virtual int init() override {
+        std::srand((unsigned int)std::time(NULL)); // to get random number
 
-    // initialize ice // Hi Sonya
-    initIce();
-    
-    // initialize iceman
-    ice_man = std::make_shared<Iceman>(this);
-    ice_man->setVisible(true);
+        // initialize ice // Hi Sonya
+        initIce();
 
-    // initialize score board
-    setDisplayText();
-    
-    // number of items depending on the current game level
-    int L = num_oil = std::min(2 + currentGameLevel, 21); // oil
-    int B = std::min(currentGameLevel/2 + 2, 9); // boulder
-    int G = std::max(5 - currentGameLevel/2, 2); // gold
-    
-    
-    // initialize goodies
-    actors.reserve(L + B + G + 10);
-    
-    // initialize boulder ->>>> will put this in initBoulder() later
-    while (B > 0) {
-      int x = rand() % 61, y = rand() % 37 + 20;
-      if ((x >= 26 && x <= 33) && (y >= 4 && y <= 64)) continue;
-      if (isOccupied(x, y)) continue;
-      
-      
-      actors.emplace_back(std::make_shared<Boulder>(x, y, this));
-      
-      // make ice invisible where the boulder is
-      for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-          if (isIcy(x+i, y+j)) {
-            ice[x+i][y+j]->setVisible(false);
-          }
+        // initialize iceman
+        ice_man = std::make_shared<Iceman>(this);
+        ice_man->setVisible(true);
+
+        // initialize score board
+        setDisplayText();
+
+        // number of items to be created
+        int L = num_oil = std::min(2 + (int)getLevel(), 21); // oil
+        int B = std::min((int)getLevel() / 2 + 2, 9); // boulder
+        int G = std::max(5 - (int)getLevel() / 2, 2); // gold
+        int P = num_protester = std::min(15, int(2 + getLevel() * 1.5)); // protester
+
+
+        // make enough size for vector -> save memory and time
+        actors.reserve(L + B + G + P + 10);
+
+        // initialize boulder
+        while (B > 0) {
+            int x = rand() % 61, y = rand() % 37 + 20;
+
+            // if x and y are in the middle aisel or if there's already other items, regenerate randome num
+            if ((x >= 26 && x <= 33) && (y >= 1 && y <= 64)) continue;
+            if (isOccupied(x, y)) continue;
+
+
+            //boulderLocations.push_back(std::make_pair(x, y));
+            //actors.emplace_back(std::make_shared<Boulder>(x, y, this));
+
+            actors.at(boulder).emplace_back(std::make_shared<Boulder>(x, y, this));
+
+            // make ice invisible where the boulder is
+            for (int i = 0; i < 4; ++i) {
+                for (int j = 0; j < 4; ++j) {
+                    if (ice[x + i][y + j]->isAlive()) {
+                        ice[x + i][y + j]->setVisible(false);
+                        ice[x + i][y + j]->setDead();
+                    }
+                }
+            }
+            --B;
         }
-      }
-      
-      --B;
-    }
-    
-    // initialize oil
-    while (L > 0) {
-      int x = rand() % 61, y = rand() % 57;
-      
-      if ((x >= 26 && x <= 33) && (y >= 4 && y <= 64)) continue;
-      if (isOccupied(x, y)) continue;
-      
-      actors.emplace_back(std::make_shared<Oil>(x, y, this));
-      
-      --L;
-    }
-    
-    while (G > 0) {
-      int x = rand() % 61, y = rand() % 57;
-      
-      if ((x >= 26 && x <= 33) && (y >= 4 && y <= 64)) continue;
-      if (isOccupied(x, y)) continue;
-      
-      actors.emplace_back(std::make_shared<Gold>(x, y, this));
-    
-      --G;
-    }
-    
-//    actors.emplace_back(std::make_shared<Sonar>(rand() % 61 , rand() % 57, this));
-    
-    return GWSTATUS_CONTINUE_GAME;
-  }
 
-  
-  virtual int move() override
-  {
-    setDisplayText();
-    
-    if (ice_man->getHP() <= 0) {
-      decLives();
-      playSound(SOUND_PLAYER_GIVE_UP);
-      return GWSTATUS_PLAYER_DIED;
-    }
-    
-    if (num_oil <= 0) {
-      ++currentGameLevel;
-      return GWSTATUS_FINISHED_LEVEL;
-    }
-    
-    ice_man->doSomething();
-    for (auto item : actors) {
-      item->doSomething();
-    }
-    
-    
-    return GWSTATUS_CONTINUE_GAME;
-	}
+        // initialize oil
+        while (L > 0) {
+            int x = rand() % 61, y = rand() % 57;
 
-  
-	virtual void cleanUp() override
-	{
-    ice_man.reset();
-    
-    for (int i = 0; i < 64; ++i) {
-      for (int j = 0; j < 64; ++j) {
-        ice[i][j].reset();
-      }
+            if ((x >= 26 && x <= 33) && (y >= 1 && y <= 64)) continue;
+            if (isOccupied(x, y)) continue;
+
+            //actors.emplace_back(std::make_shared<Oil>(x, y, this));
+
+            actors.at(oil).emplace_back(std::make_shared<Oil>(x, y, this));
+
+            --L;
+        }
+
+        // initialize gold
+        while (G > 0) {
+            int x = rand() % 61, y = rand() % 57;
+
+            if ((x >= 26 && x <= 33) && (y >= 1 && y <= 64)) continue;
+            if (isOccupied(x, y)) continue;
+
+            //actors.emplace_back(std::make_shared<Gold>(x, y, this));
+
+            actors.at(gold).emplace_back(std::make_shared<Gold>(x, y, this));
+
+            
+
+            --G;
+        }
+
+        // initialize sonar
+        //actors.emplace_back(std::make_shared<Sonar>(rand() % 61, rand() % 57, this));
+        actors.at(sonar).emplace_back(std::make_shared<Sonar>(rand() % 61, rand() % 57, this));
+
+        return GWSTATUS_CONTINUE_GAME;
     }
-    for (auto actor : actors) {
-      actor.reset();
+
+
+    virtual int move() override
+    {
+        setDisplayText();
+
+        if (ice_man->getHP() <= 0) {
+            decLives();
+            playSound(SOUND_PLAYER_GIVE_UP);
+            return GWSTATUS_PLAYER_DIED;
+        }
+
+        if (num_oil <= 0) { // you collected all oils on the field!
+            playSound(SOUND_FINISHED_LEVEL);
+            return GWSTATUS_FINISHED_LEVEL;
+        }
+
+        ice_man->doSomething();
+        for (auto type : actors) {
+            for (auto item : type) {
+                if (item->isAlive()) {
+                    item->doSomething();
+                }
+            }
+        }
+
+        // counting ticks
+        ++timeToAddProtester;
+        if (timeToAddProtester == std::max(25, 200 - (int)getLevel())) {
+            actors.emplace_back(std::make_shared<RegProtester>(60, 60, this)); // this is a test obj
+            if (num_protester > 0) { // if there's num_protester left to be created, recount time
+                --num_protester;
+                timeToAddProtester = 0;
+            }
+        }
+
+        return GWSTATUS_CONTINUE_GAME;
     }
-    
-	}
-  
-  std::shared_ptr<Iceman> getIce_man() { return ice_man; }
-  void initIce();
-  void initGold();
-  void initSonar();
-  void initBoulder();
-  void setDisplayText();
-  void deleteIce(const unsigned int& x, const unsigned int& y, const int& dir);
-  bool isIcy(const unsigned int& x, const unsigned int& y) const { return (ice[x][y]->isVisible()) ? true : false; }
-  void foundOil() { --num_oil; }
-  std::string leadingZero(const int& val, const int& n);
-  
-  bool isInRange(const unsigned int x1, const unsigned int y1, const unsigned int x2, const unsigned int y2, const float& radius) const {
-    if (sqrt(pow((x1+2)-(x2+2), 2) + pow((y1+2)-(y2+2), 2)) <= radius) return true;
-    else return false;
-  }
-  bool isOccupied(const unsigned int& x, const unsigned int& y) {
-    int x2 = x; int y2 = y;
-    for (auto actor : actors) {
-      if (isInRange(x2, y2, actor->getX(), actor->getY(), 6.0)) return true;
+
+
+    virtual void cleanUp() override
+    {
+        ice_man.reset();
+
+        for (int i = 0; i < 64; ++i) {
+            for (int j = 0; j < 64; ++j) {
+                ice[i][j].reset();
+            }
+        }
+
+        actors.clear(); // clean actors vector
+
+        // reset counting ticks
+        timeToAddProtester = 0;
     }
-    return false;
-  }
+
+    std::shared_ptr<Iceman> getIce_man() { return ice_man; }
+    void initIce();
+    void initGold();
+    void initSonar();
+    void initBoulder();
+    void setDisplayText();
+    void digIce(const unsigned int& x, const unsigned int& y, const int& dir);
+    bool isIcy(const int& x, const int& y, const int& dir) const;
+    void foundOil() { --num_oil; }
+    std::string setPrecision(const unsigned int& val, const unsigned int& precision);
+    bool isBouldery(const unsigned int ch);
+
+    bool touchingIceman(const unsigned int& x, const unsigned int& y); // work in progress
+
+    bool isInRange(const int& x1, const int& y1, const int& x2, const int& y2, const float& radius) const {
+        if (sqrt(pow((x1 + 2) - (x2 + 2), 2) + pow((y1 + 2) - (y2 + 2), 2)) <= radius) return true;
+        else return false;
+    }
+
+    bool isOccupied(const int& x, const int& y) {
+        // check if there's any other actors within 6.0 radius
+        for (const auto& type : actors) {
+            for (const auto& actor : type) {
+                if (isInRange(x, y, actor->getX(), actor->getY(), 6.0f)) return true;
+            }
+        }
+        return false;
+    }
 };
 
 #endif // STUDENTWORLD_H_

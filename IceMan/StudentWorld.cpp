@@ -6,8 +6,8 @@ GameWorld* createStudentWorld(std::string assetDir)
 }
 
 std::string StudentWorld::setPrecision(const unsigned int& val, const unsigned int& precision) {
-  int digit = (val < 10) ? 1 : int(log10(val) + 1); // prevent log10(0) error
-  if (digit > precision) return std::to_string(val); // if val is longer than the given precision, just print val
+  int digit = (val < 10) ? 1 : int(log10(val) + 1); /// prevent log10(0) error
+  if (digit > precision) return std::to_string(val); /// if val is longer than the given precision, just print val
   else return std::string(precision - digit, '0').append(std::to_string(val));
 }
 
@@ -35,8 +35,8 @@ void StudentWorld::initIce() {
 
 
 void StudentWorld::digIce(const unsigned int& x, const unsigned int& y, const int& dir) {
-  // ABOUT THIS FUNC: dig ice(set invisible and dead state) when iceman moves
-  bool isThereIce = false; // if there's even one ice to get deleted, set true
+  /// ABOUT THIS FUNC: dig ice(set invisible and dead state) when iceman moves
+  bool isThereIce = false; /// if there's even one ice to get deleted, set true
   
   switch (dir) {
     case KEY_PRESS_UP :
@@ -79,14 +79,14 @@ void StudentWorld::digIce(const unsigned int& x, const unsigned int& y, const in
       }
       break;
   }
-  if (isThereIce) playSound(SOUND_DIG); // prevent redundant sound play. even though 4 ice got deleted, play sound once
+  if (isThereIce) playSound(SOUND_DIG); /// prevent redundant sound play. even though 4 ice got deleted, play sound once
 }
 
 
 bool StudentWorld::isIcy(const int& x, const int& y, const int& dir) const {
-  // ABOUT THIS FUNC: check is there ice next to the given item's x, y
-  //                if the given dir is right, it will check right side ice
-  //                this func could also be used when a protester hit ice, turn around and go apposite side..
+  /// check is there ice next to the given item's x, y
+  /// if the given dir is right, it will check right side ice
+  /// this func could also be used when a protester hit ice, turn around and go apposite side..
   bool isThereIce = false;
   
   switch (dir) {
@@ -128,5 +128,30 @@ bool StudentWorld::isIcy(const int& x, const int& y, const int& dir) const {
 void StudentWorld::initGold() {}
 void StudentWorld::initSonar() {}
 void StudentWorld::initBoulder() {}
-
-// Students:  Add code to this file (if you wish), StudentWorld.h, Actor.h and Actor.cpp
+void StudentWorld::initSquirt(const int& dir) {
+//  switch (dir) {
+//    case Actor::up :
+//      actors.emplace_back(std::make_shared<Squirt>(ice_man->getX(), ice_man->getY()+3, this));
+//      actors.back()->setDirection(Actor::up);
+//      actors.back()->setVisible(true);
+//      break;
+//
+//    case Actor::down :
+//      actors.emplace_back(std::make_shared<Squirt>(ice_man->getX(), ice_man->getY()-3, this));
+//      actors.back()->setDirection(Actor::down);
+//      actors.back()->setVisible(true);
+//      break;
+//
+//    case Actor::right :
+//      actors.emplace_back(std::make_shared<Squirt>(ice_man->getX()+3, ice_man->getY(), this));
+//      actors.back()->setDirection(Actor::right);
+//      actors.back()->setVisible(true);
+//      break;
+//
+//    case Actor::left :
+//      actors.emplace_back(std::make_shared<Squirt>(ice_man->getX()-3, ice_man->getY(), this));
+//      actors.back()->setDirection(Actor::left);
+//      actors.back()->setVisible(true);
+//      break;
+//  }
+}

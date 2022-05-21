@@ -5,11 +5,10 @@
 #include "GameConstants.h"
 #include "Actor.h"
 #include <vector>
+#include <memory>
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
-
-// Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp
 
 class StudentWorld : public GameWorld
 {
@@ -17,49 +16,52 @@ private:
   std::shared_ptr<Ice> ice[64][64];
   std::shared_ptr<Iceman> ice_man;
   std::vector<std::shared_ptr<Actor>> actors;
-  unsigned int num_oil {0}; // num of oil left in the field
-  unsigned int num_protester {0}; // num of protester to be created
-  // below is a tick counter
-  size_t timeToAddProtester {0};
-  size_t timeToStaySonar {0}; // std::max(100, 300 - 10 * (int)getLevel())
+  unsigned int num_oil {0}; /// curr num of oil left in the field
+  unsigned int num_protester {0}; /// curr num of protester in the field
+  unsigned int target_num_protester; /// num of protester should be created
+  unsigned int hardcore_spawn_probability {0};
+  unsigned int goodie_spawn_probability {0};
+  /// below is a tick counter
+  unsigned int timeToAddProtester {0};
+  
 public:
 	StudentWorld(std::string assetDir) : GameWorld(assetDir) {}
   virtual ~StudentWorld() {}
 
 	virtual int init() override {
-    std::srand((unsigned int)std::time(NULL)); // to get random number
+    std::srand((unsigned int)std::time(NULL)); /// to get random number
 
-    // initialize ice // Hi Sonya
+    /// initialize ice // Hi Sonya
     initIce();
     
-    // initialize iceman
+    /// initialize iceman
     ice_man = std::make_shared<Iceman>(this);
     ice_man->setVisible(true);
 
-    // initialize score board
+    /// initialize score board
     setDisplayText();
     
-    // number of items to be created
-    int L = num_oil = std::min(2 + (int)getLevel(), 21); // oil
-    int B = std::min((int)getLevel()/2 + 2, 9); // boulder
-    int G = std::max(5 - (int)getLevel()/2, 2); // gold
-    int P = num_protester = std::min(15, int(2 + getLevel() * 1.5)); // protester
     
+    /// number of items to be created
+    int L = num_oil = std::min(2 + (int)getLevel(), 21); /// oil
+    int B = std::min((int)getLevel()/2 + 2, 9); /// boulder
+    int G = std::max(5 - (int)getLevel()/2, 2); /// gold
+    int P = target_num_protester = std::min(15, int(2 + getLevel() * 1.5)); /// protester
     
-    // make enough size for vector -> save memory and time
+    /// make enough size for vector -> save memory and time
     actors.reserve(L + B + G + P + 10);
     
-    // initialize boulder
+    /// initialize boulder
     while (B > 0) {
       int x = rand() % 61, y = rand() % 37 + 20;
       
-      // if x and y are in the middle aisel or if there's already other items, regenerate randome num
+      /// if x and y are in the middle aisel or if there's already other item, regenerate randome num
       if ((x >= 26 && x <= 33) && (y >= 1 && y <= 64)) continue;
-      if (isOccupied(x, y)) continue;
+      if (isOccupied(x, y, 6.0f)) continue;
       
       actors.emplace_back(std::make_shared<Boulder>(x, y, this));
       
-      // make ice invisible where the boulder is
+      /// make ice invisible where the boulder is
       for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 4; ++j) {
           if (ice[x+i][y+j]->isAlive()) {
@@ -71,32 +73,41 @@ public:
       --B;
     }
     
-    // initialize oil
+    /// initialize oil
     while (L > 0) {
       int x = rand() % 61, y = rand() % 57;
       
       if ((x >= 26 && x <= 33) && (y >= 1 && y <= 64)) continue;
-      if (isOccupied(x, y)) continue;
+      if (isOccupied(x, y, 6.0f)) continue;
       
       actors.emplace_back(std::make_shared<Oil>(x, y, this));
       
       --L;
     }
     
-    // initialize gold
+    /// initialize gold
     while (G > 0) {
       int x = rand() % 61, y = rand() % 57;
       
       if ((x >= 26 && x <= 33) && (y >= 1 && y <= 64)) continue;
-      if (isOccupied(x, y)) continue;
+      if (isOccupied(x, y, 6.0f)) continue;
       
       actors.emplace_back(std::make_shared<Gold>(x, y, this));
+      actors.back()->setState(PERM); /// pickable by iceman
     
       --G;
     }
     
-    // initialize sonar
-    actors.emplace_back(std::make_shared<Sonar>(rand() % 61 , rand() % 57, this));
+    
+    goodie_spawn_probability = getLevel() * 25 + 300;
+    timeToAddProtester = std::max(25, 200 - (int)getLevel());
+    
+//    actors.emplace_back(std::make_shared<RegProtester>(this));
+    
+    // test obj
+    actors.emplace_back(std::make_shared<Sonar>(this));
+    
+    
     
     return GWSTATUS_CONTINUE_GAME;
   }
@@ -112,27 +123,31 @@ public:
       return GWSTATUS_PLAYER_DIED;
     }
     
-    if (num_oil <= 0) { // you collected all oils on the field!
+    if (num_oil <= 0) { /// when you collected all oils on the field!
       playSound(SOUND_FINISHED_LEVEL);
       return GWSTATUS_FINISHED_LEVEL;
     }
     
-    // do something
+    /// do something
     ice_man->doSomething();
-    for (auto item : actors) {
+    for (const auto& item : actors) {
       if (item->isAlive()) {
         item->doSomething();
       }
     }
     
-    // counting ticks
-    ++timeToAddProtester;
-    if (timeToAddProtester == std::max(25, 200 - (int)getLevel())) {
-      actors.emplace_back(std::make_shared<RegProtester>(60, 60, this)); // this is a test obj
-      if (num_protester > 0) { // if there's num_protester left to be created, recount time
-        --num_protester;
+//    int goodie = rand() % goodie_spawn_probability;
+    
+    /// counting ticks
+    if (timeToAddProtester == 0) {
+      // TEST OBJ
+      actors.emplace_back(std::make_shared<RegProtester>(this));
+      if (num_protester < target_num_protester) { /// if curr num_protester in field is less than max creatable protester num, recount time
         timeToAddProtester = 0;
       }
+    }
+    else {
+      --timeToAddProtester;
     }
     
     return GWSTATUS_CONTINUE_GAME;
@@ -149,10 +164,11 @@ public:
       }
     }
     
-    actors.clear(); // clean actors vector
+    actors.clear(); /// clean actors vector
     
-    // reset counting ticks
+    /// reset counting ticks
     timeToAddProtester = 0;
+    goodie_spawn_probability = 0;
 	}
   
   std::shared_ptr<Iceman> getIce_man() { return ice_man; }
@@ -160,6 +176,7 @@ public:
   void initGold();
   void initSonar();
   void initBoulder();
+  void initSquirt(const int& dir);
   void setDisplayText();
   void digIce(const unsigned int& x, const unsigned int& y, const int& dir);
   bool isIcy(const int& x, const int& y, const int& dir) const;
@@ -171,12 +188,22 @@ public:
     else return false;
   }
   
-  bool isOccupied(const int& x, const int& y) {
-    // check if there's any other actors within 6.0 radius
+  bool isOccupied(const int& x, const int& y, const float& radius) {
+    /// check if there's any other actors within 6.0 radius
     for (const auto& actor : actors) {
-      if (isInRange(x, y, actor->getX(), actor->getY(), 6.0f)) return true;
+      if (isInRange(x, y, actor->getX(), actor->getY(), radius)) return true;
     }
     return false;
+  }
+  
+  void findGoodies() {
+    for (const auto& actor : actors) {
+      // FIX: this make boulder's visible state together...
+      // if actor is boulder or water, continue;
+      if (isInRange(ice_man->getX(), ice_man->getY(), actor->getX(), actor->getY(), 12.0f)) {
+        actor->setVisible(false); // need to change to true. THIS IS TEST
+      }
+    }
   }
 };
 

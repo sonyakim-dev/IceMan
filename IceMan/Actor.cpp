@@ -2,8 +2,6 @@
 #include "StudentWorld.h"
 #include <cmath>
 
-// Students:  Add code to this file (if you wish), Actor.h, StudentWorld.h, and StudentWorld.cpp
-
 /*================ ICEMAN ================*/
 void Iceman::doSomething() {
   if (!isAlive()) return;
@@ -44,13 +42,28 @@ void Iceman::doSomething() {
         break;
         
       case KEY_PRESS_SPACE :
-        // fire squirt(add Squirt obj)
         if (getWater() <= 0) return;
         getWorld()->playSound(SOUND_PLAYER_SQUIRT);
+        // FIX: fire squirt(add Squirt obj)
+//        getWorld()->initSquirt(getDirection());
+        getWorld()->getIce_man()->useWater();
+        break;
+        
+      case KEY_PRESS_TAB :
+        if (getGold() <= 0) return;
+        // ADD: init gold, set state to TEMP
+        getWorld()->getIce_man()->useGold();
+        break;
+        
+      case 'z' :
+        if (getSonar() <= 0) return;
+        // ADD: map the contents of the oil field wihtin 12.0 radius
+        getWorld()->findGoodies();
+        useSonar();
         break;
         
       case KEY_PRESS_ESCAPE :
-        // completely annoyed and abort the curr lev
+        /// completely get annoyed and abort the curr lev
         getAnnoyed(100);
         break;
     }
@@ -69,13 +82,13 @@ void Oil::doSomething() {
         setVisible(true);
         return;
     }
-    // if iceman and oil is in range 3.0, take that oil!
+    /// if iceman and oil is in range 3.0, take that oil!
     else if (getWorld()->isInRange(x, y, getX(), getY(), 3.0f)) {
       setDead();
       setVisible(false);
       getWorld()->playSound(SOUND_FOUND_OIL);
       getWorld()->increaseScore(1000);
-      getWorld()->foundOil(); // this decrement the number of oil has to be found
+      getWorld()->foundOil(); /// this decrement the number of oil has to be found
       return;
     }
 }
@@ -91,7 +104,7 @@ void Gold::doSomething() {
         setVisible(true);
         return;
     }
-    // PERM means gold is pickable by iceman
+    /// PERM means gold is pickable by iceman
     else if ((getWorld()->isInRange(x, y, getX(), getY(), 3.0f)) && (getState() == PERM)) {
       setDead();
       setVisible(false);
@@ -100,7 +113,7 @@ void Gold::doSomething() {
       getWorld()->getIce_man()->addGold();
       return;
     }
-    // TEMP means gold is pickable by protestor and it will be deleted after few ticks
+    /// TEMP means gold is pickable by protestor and it will be deleted after few ticks
     else if (getWorld()->isInRange(x, y, getX(), getY(), 3.0f) && (getState() == TEMP)) {
       setDead();
       setVisible(false);
@@ -114,19 +127,40 @@ void Gold::doSomething() {
 void Boulder::doSomething() {
   if (!isAlive()) return;
 
-  if (getState() == WAIT) {
-    // ADD: wait for 30 ticks
-    setState(FALL);
-    return;
+  switch (getState()) {
+    case STABLE :
+      /// if there's no ice below, boulder will be in wait state.
+      (getWorld()->isIcy(getX(), getY(), getDirection())) ? setState(STABLE) : setState(WAIT);
+      break;
+      
+    case WAIT :
+      /// wait for 30 ticks
+      if (time_wait == 30) {
+        setState(FALL);
+        getWorld()->playSound(SOUND_FALLING_ROCK);
+      }
+      else {
+        ++time_wait;
+      }
+      break;
+      
+    case FALL :
+          /// 1) when it hit the ground OR
+      if (getY() <= 0 ||
+          /// 2) when it hit another boulder OR
+          
+          /// 3) when it hit the ice
+          getWorld()->isIcy(getX(), getY(), getDirection()) )
+      {
+        setVisible(false);
+        setDead();
+      }
+      
+      // ADD: when it hit iceman or protester
+
+      moveTo(getX(), getY()-1);
+      break;
   }
-  
-  if (getState() == FALL) {
-    // FIX: need to disapear after certain ticks
-    moveTo(getX(), getY()-1);
-  }
-  
-  // if there's no ice below, boulder will be in wait state.
-  (getWorld()->isIcy(getX(), getY(), getDirection())) ? setState(STABLE) : setState(WAIT);
 }
 
 /*================ SONAR ================*/
@@ -144,4 +178,13 @@ void Sonar::doSomething() {
     getWorld()->getIce_man()->addSonar();
     return;
   }
+  
+  if (life_time == std::max(100, 300 - 10 * (int)getWorld()->getLevel())) { // need improvement
+    setDead();
+    setVisible(false);
+  }
+  else {
+    ++life_time;
+  }
+  
 }

@@ -44,13 +44,13 @@ public:
     
     /// number of items to be created
     int L = num_oil = std::min(2 + (int)getLevel(), 21); /// oil
+    int P = target_num_protester = std::min(15, int(2 + getLevel() * 1.5)); /// protester
     int B = std::min((int)getLevel()/2 + 2, 9); /// boulder
     int G = std::max(5 - (int)getLevel()/2, 2); /// gold
-    int P = target_num_protester = std::min(15, int(2 + getLevel() * 1.5)); /// protester
     
     /// make enough size for vector -> save memory and time
     actors.reserve(L + B + G + P + 10);
-    
+
     /// initialize boulder
     while (B > 0) {
       int x = rand() % 61, y = rand() % 37 + 20;
@@ -65,7 +65,6 @@ public:
       for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 4; ++j) {
           if (ice[x+i][y+j]->isAlive()) {
-            ice[x+i][y+j]->setVisible(false);
             ice[x+i][y+j]->setDead();
           }
         }
@@ -92,8 +91,7 @@ public:
       if ((x >= 26 && x <= 33) && (y >= 1 && y <= 64)) continue;
       if (isOccupied(x, y, 6.0f)) continue;
       
-      actors.emplace_back(std::make_shared<Gold>(x, y, this));
-      actors.back()->setState(PERM); /// pickable by iceman
+      actors.emplace_back(std::make_shared<Gold>(x, y, this, PERM));
     
       --G;
     }
@@ -104,7 +102,7 @@ public:
     
 //    actors.emplace_back(std::make_shared<RegProtester>(this));
     
-    // test obj
+    // TEST OBJ
     actors.emplace_back(std::make_shared<Sonar>(this));
     
     
@@ -150,6 +148,10 @@ public:
       --timeToAddProtester;
     }
     
+//    std::remove_if(actors.begin(), actors.end(), [](std::shared_ptr<Actor> actor) {
+//      return (!actor->isAlive()) ? true : false;
+//    });
+    
     return GWSTATUS_CONTINUE_GAME;
 	}
 
@@ -164,47 +166,46 @@ public:
       }
     }
     
-    actors.clear(); /// clean actors vector
+    actors.clear(); /// clear actors vector
     
-    /// reset counting ticks
+    /// reset ticks, etc
     timeToAddProtester = 0;
     goodie_spawn_probability = 0;
 	}
   
   std::shared_ptr<Iceman> getIce_man() { return ice_man; }
+  std::string setPrecision(const unsigned int& val, const unsigned int& precision);
+  void setDisplayText();
   void initIce();
   void initGold();
   void initSonar();
   void initBoulder();
-  void initSquirt(const int& dir);
-  void setDisplayText();
+  
   void digIce(const unsigned int& x, const unsigned int& y, const int& dir);
-  bool isIcy(const int& x, const int& y, const int& dir) const;
-  void foundOil() { --num_oil; }
-  std::string setPrecision(const unsigned int& val, const unsigned int& precision);
+  
+  void foundOil() { playSound(SOUND_FOUND_OIL); increaseScore(1000); --num_oil; }
+  void foundGold() { playSound(SOUND_GOT_GOODIE); increaseScore(10); ice_man->addGold(); }
+  void foundSonar() { playSound(SOUND_GOT_GOODIE); increaseScore(75); ice_man->addSonar(); }
+  void foundWater() { playSound(SOUND_GOT_GOODIE); increaseScore(100); ice_man->addWater(); }
+  
+  void findGoodies(const int& x, const int& y); /// using sonar
+  void dropGold(const int& x, const int& y); /// using gold
+  void squirtWater(const int& x, const int& y, const Actor::Direction dir); /// using water
+  void bribeProtester(); // not complete. need to add arguments
   
   bool isInRange(const int& x1, const int& y1, const int& x2, const int& y2, const float& radius) const {
-    if (sqrt(pow((x1+2)-(x2+2), 2) + pow((y1+2)-(y2+2), 2)) <= radius) return true;
+    if (sqrt(pow(x1-x2, 2) + pow(y1-y2, 2)) <= radius) return true;
     else return false;
   }
-  
-  bool isOccupied(const int& x, const int& y, const float& radius) {
+  bool isOccupied(const int& x, const int& y, const float& radius) const {
     /// check if there's any other actors within 6.0 radius
     for (const auto& actor : actors) {
       if (isInRange(x, y, actor->getX(), actor->getY(), radius)) return true;
     }
     return false;
   }
-  
-  void findGoodies() {
-    for (const auto& actor : actors) {
-      // FIX: this make boulder's visible state together...
-      // if actor is boulder or water, continue;
-      if (isInRange(ice_man->getX(), ice_man->getY(), actor->getX(), actor->getY(), 12.0f)) {
-        actor->setVisible(false); // need to change to true. THIS IS TEST
-      }
-    }
-  }
+  bool isIcy(const int& x, const int& y, const int& dir) const;
+  bool isBouldery(const int& x, const int& y, const int& dir) const;
 };
 
 #endif // STUDENTWORLD_H_

@@ -26,7 +26,6 @@ void StudentWorld::initIce() {
         for (int y = 0; y < 64; ++y) {
             ice[x][y] = std::make_shared<Ice>(x, y, this);
             if (((x >= 30 && x <= 33) && (y >= 4 && y <= 59)) || y >= 60) {
-              ice[x][y]->setVisible(false);
               ice[x][y]->setDead();
             }
         }
@@ -41,9 +40,8 @@ void StudentWorld::digIce(const unsigned int& x, const unsigned int& y, const in
   switch (dir) {
     case KEY_PRESS_UP :
       for (int i = 0; i < 4; ++i) {
-        if (ice[x + i][y + 3]->isVisible()) {
+        if (ice[x + i][y + 3]->isAlive()) {
           isThereIce = true;
-          ice[x + i][y + 3]->setVisible(false);
           ice[x + i][y + 3]->setDead();
         }
       }
@@ -51,9 +49,8 @@ void StudentWorld::digIce(const unsigned int& x, const unsigned int& y, const in
     
     case KEY_PRESS_DOWN :
       for (int i = 0; i < 4; ++i) {
-        if (ice[x + i][y]->isVisible()) {
+        if (ice[x + i][y]->isAlive()) {
           isThereIce = true;
-          ice[x + i][y]->setVisible(false);
           ice[x + i][y]->setDead();
         }
       }
@@ -61,9 +58,8 @@ void StudentWorld::digIce(const unsigned int& x, const unsigned int& y, const in
       
     case KEY_PRESS_RIGHT :
       for (int i = 0; i < 4; ++i) {
-        if (ice[x + 3][y + i]->isVisible()) {
+        if (ice[x + 3][y + i]->isAlive()) {
           isThereIce = true;
-          ice[x + 3][y + i]->setVisible(false);
           ice[x + 3][y + i]->setDead();
         }
       }
@@ -71,9 +67,8 @@ void StudentWorld::digIce(const unsigned int& x, const unsigned int& y, const in
       
     case KEY_PRESS_LEFT :
       for (int i = 0; i < 4; ++i) {
-        if (ice[x][y + i]->isVisible()) {
+        if (ice[x][y + i]->isAlive()) {
           isThereIce = true;
-          ice[x][y + i]->setVisible(false);
           ice[x][y + i]->setDead();
         }
       }
@@ -87,71 +82,122 @@ bool StudentWorld::isIcy(const int& x, const int& y, const int& dir) const {
   /// check is there ice next to the given item's x, y
   /// if the given dir is right, it will check right side ice
   /// this func could also be used when a protester hit ice, turn around and go apposite side..
-  bool isThereIce = false;
-  
   switch (dir) {
     case Actor::up :
       for (int i = 0; i < 4; ++i) {
-        if (ice[x + i][y + 3]->isVisible()) {
-          isThereIce = true;
+        if (ice[x + i][y + 4]->isAlive()) {
+          return true;
         }
       }
       break;
       
     case Actor::down :
       for (int i = 0; i < 4; ++i) {
-        if (ice[x + i][y - 1]->isVisible()) {
-          isThereIce = true;
+        if (ice[x + i][y - 1]->isAlive()) {
+          return true;
         }
       }
       break;
       
     case Actor::right :
       for (int i = 0; i < 4; ++i) {
-        if (ice[x + 3][y + i]->isVisible()) {
-          isThereIce = true;
+        if (ice[x + 4][y + i]->isAlive()) {
+          return true;
         }
       }
       break;
       
     case Actor::left :
       for (int i = 0; i < 4; ++i) {
-        if (ice[x - 1][y + i]->isVisible()) {
-          isThereIce = true;
+        if (ice[x - 1][y + i]->isAlive()) {
+          return true;
         }
       }
       break;
   }
-  return isThereIce;
+  return false;
 }
+
+bool StudentWorld::isBouldery(const int& x, const int& y, const int& dir) const {
+  for (const auto& actor : actors) {
+    if (!actor->isAlive()) continue;
+    
+    if (typeid(Boulder) == typeid(*actor)) {
+      switch (dir) {
+        case Actor::up :
+          if (isInRange(x, y, actor->getX(), actor->getY(), 4.0f) && actor->getY() > y)
+            return true;
+          break;
+
+        case Actor::down :
+          if (isInRange(x, y, actor->getX(), actor->getY(), 4.0f) && actor->getY() < y)
+            return true;
+          break;
+
+        case Actor::right :
+          if (isInRange(x, y, actor->getX(), actor->getY(), 4.0f) && actor->getX() > x)
+            return true;
+          break;
+
+        case Actor::left :
+          if (isInRange(x, y, actor->getX(), actor->getY(), 4.0f) && actor->getX() < x)
+            return true;
+          break;
+      }
+    }
+  }
+  return false;
+}
+
 
 void StudentWorld::initGold() {}
 void StudentWorld::initSonar() {}
 void StudentWorld::initBoulder() {}
-void StudentWorld::initSquirt(const int& dir) {
-//  switch (dir) {
-//    case Actor::up :
-//      actors.emplace_back(std::make_shared<Squirt>(ice_man->getX(), ice_man->getY()+3, this));
-//      actors.back()->setDirection(Actor::up);
-//      actors.back()->setVisible(true);
-//      break;
-//
-//    case Actor::down :
-//      actors.emplace_back(std::make_shared<Squirt>(ice_man->getX(), ice_man->getY()-3, this));
-//      actors.back()->setDirection(Actor::down);
-//      actors.back()->setVisible(true);
-//      break;
-//
-//    case Actor::right :
-//      actors.emplace_back(std::make_shared<Squirt>(ice_man->getX()+3, ice_man->getY(), this));
-//      actors.back()->setDirection(Actor::right);
-//      actors.back()->setVisible(true);
-//      break;
-//
-//    case Actor::left :
-//      actors.emplace_back(std::make_shared<Squirt>(ice_man->getX()-3, ice_man->getY(), this));
-//      actors.back()->setDirection(Actor::left);
-//      actors.back()->setVisible(true);
-//      break;
-//  }
+
+void StudentWorld::dropGold(const int& x, const int& y) {
+  actors.emplace_back(std::make_shared<Gold>(x, y, this, TEMP));
+  ice_man->useGold();
+}
+
+void StudentWorld::squirtWater(const int& x, const int& y, const Actor::Direction dir) {
+  playSound(SOUND_PLAYER_SQUIRT);
+  ice_man->useWater();
+  
+  if (x > 56) return;
+  
+  switch (dir) {
+    case Actor::up :
+      if (isIcy(x, y+3, dir)) return; // make enough space to quirt
+      actors.emplace_back(std::make_shared<Squirt>(x, y+3, this, dir));
+      break;
+    case Actor::down :
+      if (isIcy(x, y-3, dir)) return;
+      actors.emplace_back(std::make_shared<Squirt>(x, y-3, this, dir));
+      break;
+    case Actor::right :
+      if (isIcy(x+3, y, dir)) return;
+      actors.emplace_back(std::make_shared<Squirt>(x+3, y, this, dir));
+      break;
+    case Actor::left :
+      if (isIcy(x-3, y, dir)) return;
+      actors.emplace_back(std::make_shared<Squirt>(x-3, y, this, dir));
+      break;
+  }
+}
+
+void StudentWorld::bribeProtester() {
+  playSound(SOUND_PROTESTER_FOUND_GOLD);
+  // ADD: protestor react as bribed
+  increaseScore(25);
+}
+
+void StudentWorld::findGoodies(const int& x, const int& y) {
+  ice_man->useSonar();
+  for (const auto& actor : actors) {
+    if (typeid(*actor) == typeid(Gold) || typeid(*actor) == typeid(Oil)) {
+      if (isInRange(x, y, actor->getX(), actor->getY(), 12.0f)) {
+        actor->setVisible(false); // THIS IS TEST: need to change to true.
+      }
+    }
+  }
 }

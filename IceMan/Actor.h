@@ -15,7 +15,7 @@ public:
   virtual void doSomething() = 0;
   virtual StudentWorld* getWorld() const { return stud_world; }
   bool isAlive() const { return active; }
-  void setDead() { active = false; }
+  void setDead() { active = false; setVisible(false); }
   int getState() const { return state; }
   void setState(State condition) { state = condition; }
 private:
@@ -35,15 +35,15 @@ public:
 
 
 class Character : public Actor {
-private:
-  int health {100};
+protected:
+  int hit_points {100};
 public:
   Character(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
     : Actor(imageID, startX, startY, stud_world, dir, size, depth) {}
   virtual ~Character() {}
   virtual void doSomething() override = 0;
-  virtual void getAnnoyed(unsigned int damage) { health -= damage; } /// both iceman and protester get annoyed
-  virtual int getHP() const { return health; }
+  virtual void getAnnoyed(unsigned int damage) = 0; /// both iceman and protester get annoyed
+  virtual int getHP() const { return hit_points; }
 };
 
 class Iceman : public Character {
@@ -56,6 +56,7 @@ public:
     : Character(IID_PLAYER, 30, 60, stud_world, right, 1.0, 0) { setVisible(true); }
   virtual ~Iceman() {}
   virtual void doSomething() override;
+  virtual void getAnnoyed(unsigned int damage) override;
   virtual void addGold() { ++i_golds; }
   virtual void addWater() { i_waters += 5; }
   virtual void addSonar() { i_sonars += 2; }
@@ -72,7 +73,8 @@ public:
   Protester(int imageID, StudentWorld* stud_world)
     : Character(imageID, 60, 60, stud_world, left, 1, 0) {}
   virtual ~Protester() {}
-  virtual void doSomething() = 0;
+  virtual void doSomething() override = 0;
+  virtual void getAnnoyed(unsigned int damage) override = 0;
 };
 
 class RegProtester : public Protester {
@@ -81,6 +83,7 @@ public:
     : Protester(IID_PROTESTER, stud_world) { setVisible(true); }
   virtual ~RegProtester() {}
   virtual void doSomething() { /*moveTo(getX()-1, getY());*/ }
+  virtual void getAnnoyed(unsigned int damage);
 };
 
 
@@ -103,10 +106,12 @@ public:
 
 class Gold : public Goodies {
 public:
-    Gold(int startX, int startY, StudentWorld* stud_world)
-      : Goodies(IID_GOLD, startX, startY, stud_world, right, 1, 2) { setVisible(true); }
+    Gold(int startX, int startY, StudentWorld* stud_world, State condition = PERM)
+  : Goodies(IID_GOLD, startX, startY, stud_world, right, 1, 2) { setState(condition); (condition == TEMP) ? setVisible(true) : setVisible(false);}
     virtual ~Gold() {}
     virtual void doSomething() override;
+private:
+  unsigned int life_time{0}; /// gold could stay on the field for only for a certain time when it's TEMP
 };
 
 class Sonar : public Goodies {
@@ -122,7 +127,7 @@ private:
 class Water : public Goodies {
 public:
     Water(int startX, int startY, StudentWorld* stud_world)
-      : Goodies(IID_WATER_POOL, startX, startY, stud_world, right, 1, 2) { setVisible(true); }
+  : Goodies(IID_WATER_POOL, startX, startY, stud_world, right, 1, 2) { setVisible(true); setState(TEMP); }
     virtual ~Water() {}
     virtual void doSomething() override;
 private:
@@ -151,10 +156,12 @@ private:
 
 class Squirt : public Attack {
 public:
-    Squirt(int startX, int startY, StudentWorld* stud_world)
-      : Attack(IID_WATER_SPURT, startX, startY, stud_world, right, 1, 1) {}
+    Squirt(int startX, int startY, StudentWorld* stud_world, Direction dir = right)
+      : Attack(IID_WATER_SPURT, startX, startY, stud_world, dir, 1, 1) { setVisible(true); }
     virtual ~Squirt() {}
-    virtual void doSomething() override;
+  virtual void doSomething() override;
+private:
+  unsigned int life_time{0};
 };
 
 #endif // ACTOR_H_

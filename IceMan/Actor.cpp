@@ -11,7 +11,7 @@ void Iceman::doSomething() {
     switch (ch) {
       case KEY_PRESS_UP :
         if (getDirection() == up) {
-          moveTo(getX(), (getY() == 60) ? getY() : getY() + 1);
+          moveTo(getX(), (getY() == 60 || getWorld()->isBouldery(getX(), getY(), up)) ? getY() : getY() + 1);
           getWorld()->digIce(getX(), getY(), KEY_PRESS_UP);
         }
         setDirection(up);
@@ -19,7 +19,7 @@ void Iceman::doSomething() {
         
       case KEY_PRESS_DOWN :
         if (getDirection() == down) {
-          moveTo(getX(), (getY() == 0) ? getY() : getY() - 1);
+          moveTo(getX(), (getY() == 0 || getWorld()->isBouldery(getX(), getY(), down)) ? getY() : getY() - 1);
           getWorld()->digIce(getX(), getY(), KEY_PRESS_DOWN);
         }
         setDirection(down);
@@ -27,7 +27,7 @@ void Iceman::doSomething() {
         
       case KEY_PRESS_LEFT :
         if (getDirection() == left) {
-          moveTo((getX() == 0) ? getX() : getX() - 1, getY());
+          moveTo((getX() == 0 || getWorld()->isBouldery(getX(), getY(), left)) ? getX() : getX() - 1, getY());
           getWorld()->digIce(getX(), getY(), KEY_PRESS_LEFT);
         }
         setDirection(left);
@@ -35,7 +35,7 @@ void Iceman::doSomething() {
         
       case KEY_PRESS_RIGHT :
         if (getDirection() == right) {
-          moveTo((getX() == 60) ? getX() : getX() + 1, getY());
+          moveTo((getX() == 60 || getWorld()->isBouldery(getX(), getY(), right)) ? getX() : getX() + 1, getY());
           getWorld()->digIce(getX(), getY(), KEY_PRESS_RIGHT);
         }
         setDirection(right);
@@ -43,23 +43,17 @@ void Iceman::doSomething() {
         
       case KEY_PRESS_SPACE :
         if (getWater() <= 0) return;
-        getWorld()->playSound(SOUND_PLAYER_SQUIRT);
-        // FIX: fire squirt(add Squirt obj)
-//        getWorld()->initSquirt(getDirection());
-        getWorld()->getIce_man()->useWater();
+        getWorld()->squirtWater(getX(), getY(), getDirection());
         break;
         
       case KEY_PRESS_TAB :
         if (getGold() <= 0) return;
-        // ADD: init gold, set state to TEMP
-        getWorld()->getIce_man()->useGold();
+        getWorld()->dropGold(getX(), getY());
         break;
         
       case 'z' :
         if (getSonar() <= 0) return;
-        // ADD: map the contents of the oil field wihtin 12.0 radius
-        getWorld()->findGoodies();
-        useSonar();
+        getWorld()->findGoodies(getX(), getY());
         break;
         
       case KEY_PRESS_ESCAPE :
@@ -70,8 +64,26 @@ void Iceman::doSomething() {
   }
 }
 
+void Iceman::getAnnoyed(unsigned int damage) {
+  hit_points -= damage;
+  if (hit_points <= 0) {
+    getWorld()->playSound(SOUND_PLAYER_ANNOYED);
+    setDead();
+  }
+}
 
-/*================ Oil ================*/
+
+/*================ PROTESTER ================*/
+void RegProtester::getAnnoyed(unsigned int damage) {
+  hit_points -= damage;
+  if (hit_points <= 0) {
+    getWorld()->playSound(SOUND_PROTESTER_GIVE_UP);
+    setDead();
+  }
+}
+
+
+/*================ OIL ================*/
 void Oil::doSomething() {
     if (!isAlive()) return;
   
@@ -84,43 +96,47 @@ void Oil::doSomething() {
     }
     /// if iceman and oil is in range 3.0, take that oil!
     else if (getWorld()->isInRange(x, y, getX(), getY(), 3.0f)) {
-      setDead();
-      setVisible(false);
-      getWorld()->playSound(SOUND_FOUND_OIL);
-      getWorld()->increaseScore(1000);
       getWorld()->foundOil(); /// this decrement the number of oil has to be found
+      setDead();
       return;
     }
 }
 
 /*================ GOLD ================*/
 void Gold::doSomething() {
-    if (!isAlive()) return;
-  
-    auto x = getWorld()->getIce_man()->getX();
-    auto y = getWorld()->getIce_man()->getY();
-  
-    if (!isVisible() && getWorld()->isInRange(x, y, getX(), getY(), 4.0f)) {
+  if (!isAlive()) return;
+
+  switch (getState()) {
+    case TEMP : /// TEMP means gold is pickable by protestor and it will be deleted after few ticks
+      if (getWorld()->isInRange(/*protester's x*/10, /*protester's y*/10, getX(), getY(), 3.0f)) {
+        getWorld()->bribeProtester();
+        // after a certain tick,
+        setDead();
+      }
+      else {
+        if (life_time == 100) {
+          setDead();
+          life_time = 0;
+        }
+        else {
+          ++life_time;
+        }
+      }
+      break;
+      
+    case PERM : /// PERM means gold is pickable by iceman
+      auto x = getWorld()->getIce_man()->getX();
+      auto y = getWorld()->getIce_man()->getY();
+      
+      if (!isVisible() && getWorld()->isInRange(x, y, getX(), getY(), 4.0f)) {
         setVisible(true);
-        return;
-    }
-    /// PERM means gold is pickable by iceman
-    else if ((getWorld()->isInRange(x, y, getX(), getY(), 3.0f)) && (getState() == PERM)) {
-      setDead();
-      setVisible(false);
-      getWorld()->playSound(SOUND_GOT_GOODIE);
-      getWorld()->increaseScore(10);
-      getWorld()->getIce_man()->addGold();
-      return;
-    }
-    /// TEMP means gold is pickable by protestor and it will be deleted after few ticks
-    else if (getWorld()->isInRange(x, y, getX(), getY(), 3.0f) && (getState() == TEMP)) {
-      setDead();
-      setVisible(false);
-      getWorld()->playSound(SOUND_PROTESTER_FOUND_GOLD);
-      // ADD: protestor react as bribed
-      getWorld()->increaseScore(25);
-    }
+      }
+      else if (getWorld()->isInRange(x, y, getX(), getY(), 3.0f)) {
+        getWorld()->foundGold();
+        setDead();
+      }
+      break;
+  }
 }
 
 /*================ BOULDER ================*/
@@ -148,16 +164,22 @@ void Boulder::doSomething() {
           /// 1) when it hit the ground OR
       if (getY() <= 0 ||
           /// 2) when it hit another boulder OR
-          
+          getWorld()->isBouldery(getX(), getY(), getDirection()) || //?
           /// 3) when it hit the ice
           getWorld()->isIcy(getX(), getY(), getDirection()) )
       {
-        setVisible(false);
         setDead();
       }
       
-      // ADD: when it hit iceman or protester
-
+      /// when it hit the iceman
+      if (getWorld()->isInRange(getX(), getY(), getWorld()->getIce_man()->getX(), getWorld()->getIce_man()->getY(), 3.0f)) {
+        getWorld()->getIce_man()->getAnnoyed(100);
+      }
+      /// when it hit the protester
+//      if (within range 3.0) {
+//
+//      }
+      
       moveTo(getX(), getY()-1);
       break;
   }
@@ -166,25 +188,49 @@ void Boulder::doSomething() {
 /*================ SONAR ================*/
 void Sonar::doSomething() {
   if (!isAlive()) return;
-  
-  auto x = getWorld()->getIce_man()->getX();
-  auto y = getWorld()->getIce_man()->getY();
 
-  if (getWorld()->isInRange(x, y, getX(), getY(), 3.0f)) {
+  if (getWorld()->isInRange(getX(), getY(), getWorld()->getIce_man()->getX(), getWorld()->getIce_man()->getY(), 3.0f)) {
+    getWorld()->foundSonar();
     setDead();
-    setVisible(false);
-    getWorld()->playSound(SOUND_GOT_GOODIE);
-    getWorld()->increaseScore(75);
-    getWorld()->getIce_man()->addSonar();
     return;
   }
   
   if (life_time == std::max(100, 300 - 10 * (int)getWorld()->getLevel())) { // need improvement
     setDead();
-    setVisible(false);
+//    life_time = 0;
   }
   else {
     ++life_time;
   }
+}
+
+/*================ SQUIRT ================*/
+void Squirt::doSomething() {
+  if (!isAlive()) return;
   
+  // ADD: protester is within 3.0, make annoyed
+  
+  if (getWorld()->isIcy(getX(), getY(), getDirection()) ||
+      getWorld()->isBouldery(getX(), getY(), getDirection())) {
+    setDead();
+    return;
+  }
+  
+  if (life_time > 4) setDead();
+  else ++life_time;
+  
+  switch (getDirection()) {
+    case Actor::up :
+      moveTo(getX(), getY()+1);
+      break;
+    case Actor::down :
+      moveTo(getX(), getY()-1);
+      break;
+    case Actor::right :
+      moveTo(getX()+1, getY());
+      break;
+    case Actor::left :
+      moveTo(getX()-1, getY());
+      break;
+  }
 }

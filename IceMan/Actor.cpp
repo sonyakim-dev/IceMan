@@ -109,7 +109,7 @@ void Gold::doSomething() {
   switch (getState()) {
     case TEMP : /// TEMP means gold is pickable by protestor and it will be deleted after few ticks
       if (getWorld()->isInRange(/*protester's x*/10, /*protester's y*/10, getX(), getY(), 3.0f)) {
-        getWorld()->bribeProtester();
+        getWorld()->bribeProtester(10, 10);
         // after a certain tick,
         setDead();
       }
@@ -139,6 +139,43 @@ void Gold::doSomething() {
   }
 }
 
+/*================ SONAR ================*/
+void Sonar::doSomething() {
+  if (!isAlive()) return;
+  
+  if (getWorld()->isInRange(getX(), getY(), getWorld()->getIce_man()->getX(), getWorld()->getIce_man()->getY(), 3.0f)) {
+    getWorld()->foundSonar();
+    setDead();
+    return;
+  }
+  
+  if (life_time == std::max(100, 300 - 10 * (int)getWorld()->getLevel())) { // need improvement
+    setDead();
+    //    life_time = 0;
+  }
+  else {
+    ++life_time;
+  }
+}
+
+/*================ WATER ================*/
+void Water::doSomething() {
+  if (!isAlive()) return;
+  
+  if (getWorld()->isInRange(getX(), getY(), getWorld()->getIce_man()->getX(), getWorld()->getIce_man()->getY(), 3.0f)) {
+    getWorld()->foundWater();
+    setDead();
+    return;
+  }
+  
+  if (life_time == std::max(100, 300 - 10 * (int)getWorld()->getLevel())) { // need improvement
+    setDead();
+  }
+  else {
+    ++life_time;
+  }
+}
+
 /*================ BOULDER ================*/
 void Boulder::doSomething() {
   if (!isAlive()) return;
@@ -146,7 +183,7 @@ void Boulder::doSomething() {
   switch (getState()) {
     case STABLE :
       /// if there's no ice below, boulder will be in wait state.
-      (getWorld()->isIcy(getX(), getY(), getDirection())) ? setState(STABLE) : setState(WAIT);
+      (getWorld()->isIcy(getX(), getY(), down)) ? setState(STABLE) : setState(WAIT);
       break;
       
     case WAIT :
@@ -164,9 +201,9 @@ void Boulder::doSomething() {
           /// 1) when it hit the ground OR
       if (getY() <= 0 ||
           /// 2) when it hit another boulder OR
-          getWorld()->isBouldery(getX(), getY(), getDirection()) || //?
+          getWorld()->isBouldery(getX(), getY(), down) || //?
           /// 3) when it hit the ice
-          getWorld()->isIcy(getX(), getY(), getDirection()) )
+          getWorld()->isIcy(getX(), getY(), down) )
       {
         setDead();
       }
@@ -185,38 +222,20 @@ void Boulder::doSomething() {
   }
 }
 
-/*================ SONAR ================*/
-void Sonar::doSomething() {
-  if (!isAlive()) return;
-
-  if (getWorld()->isInRange(getX(), getY(), getWorld()->getIce_man()->getX(), getWorld()->getIce_man()->getY(), 3.0f)) {
-    getWorld()->foundSonar();
-    setDead();
-    return;
-  }
-  
-  if (life_time == std::max(100, 300 - 10 * (int)getWorld()->getLevel())) { // need improvement
-    setDead();
-//    life_time = 0;
-  }
-  else {
-    ++life_time;
-  }
-}
-
 /*================ SQUIRT ================*/
 void Squirt::doSomething() {
   if (!isAlive()) return;
   
   // ADD: protester is within 3.0, make annoyed
   
+  /// when it hit the ice or boulder set it dead
   if (getWorld()->isIcy(getX(), getY(), getDirection()) ||
       getWorld()->isBouldery(getX(), getY(), getDirection())) {
     setDead();
     return;
   }
   
-  if (life_time > 4) setDead();
+  if (life_time > 4) { setDead(); return; }
   else ++life_time;
   
   switch (getDirection()) {
@@ -234,3 +253,4 @@ void Squirt::doSomething() {
       break;
   }
 }
+

@@ -5,7 +5,7 @@ GameWorld* createStudentWorld(std::string assetDir)
 	return new StudentWorld(assetDir);
 }
 
-std::string StudentWorld::setPrecision(const unsigned int& val, const unsigned int& precision) {
+std::string StudentWorld::setPrecision(const unsigned int& val, const unsigned int& precision) const {
   int digit = (val < 10) ? 1 : int(log10(val) + 1); /// prevent log10(0) error
   if (digit > precision) return std::to_string(val); /// if val is longer than the given precision, just print val
   else return std::string(precision - digit, '0').append(std::to_string(val));
@@ -159,33 +159,29 @@ void StudentWorld::dropGold(const int& x, const int& y) {
   ice_man->useGold();
 }
 
-void StudentWorld::squirtWater(const int& x, const int& y, const Actor::Direction dir) {
+void StudentWorld::squirtWater(const int& x, const int& y, const Actor::Direction& dir) {
   playSound(SOUND_PLAYER_SQUIRT);
   ice_man->useWater();
   
-  if (x > 56) return;
+  if (x > 56) return; // prevent out of range
   
   switch (dir) {
     case Actor::up :
-      if (isIcy(x, y+3, dir)) return; // make enough space to quirt
       actors.emplace_back(std::make_shared<Squirt>(x, y+3, this, dir));
       break;
     case Actor::down :
-      if (isIcy(x, y-3, dir)) return;
       actors.emplace_back(std::make_shared<Squirt>(x, y-3, this, dir));
       break;
     case Actor::right :
-      if (isIcy(x+3, y, dir)) return;
       actors.emplace_back(std::make_shared<Squirt>(x+3, y, this, dir));
       break;
     case Actor::left :
-      if (isIcy(x-3, y, dir)) return;
       actors.emplace_back(std::make_shared<Squirt>(x-3, y, this, dir));
       break;
   }
 }
 
-void StudentWorld::bribeProtester() {
+void StudentWorld::bribeProtester(const int& x, const int& y) {
   playSound(SOUND_PROTESTER_FOUND_GOLD);
   // ADD: protestor react as bribed
   increaseScore(25);

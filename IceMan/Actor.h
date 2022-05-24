@@ -25,6 +25,7 @@ private:
 };
 
 
+/*================ ICE ================*/
 class Ice : public Actor {
 public:
   Ice(int startX, int startY, StudentWorld* stud_world)
@@ -34,6 +35,7 @@ public:
 };
 
 
+/*================ CHARACTER ================*/
 class Character : public Actor {
 protected:
   int hit_points {100};

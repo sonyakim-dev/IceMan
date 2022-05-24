@@ -45,8 +45,8 @@ public:
     /// number of items to be created
     int L = num_oil = std::min(2 + (int)getLevel(), 21); /// oil
     int P = target_num_protester = std::min(15, int(2 + getLevel() * 1.5)); /// protester
-    int B = std::min((int)getLevel()/2 + 2, 9); /// boulder
-    int G = std::max(5 - (int)getLevel()/2, 2); /// gold
+    int B = std::min((int)getLevel() / 2 + 2, 9); /// boulder
+    int G = std::max(5 - (int)getLevel() / 2, 2); /// gold
     
     /// make enough size for vector -> save memory and time
     actors.reserve(L + B + G + P + 10);
@@ -100,11 +100,7 @@ public:
     goodie_spawn_probability = getLevel() * 25 + 300;
     timeToAddProtester = std::max(25, 200 - (int)getLevel());
     
-//    actors.emplace_back(std::make_shared<RegProtester>(this));
-    
-    // TEST OBJ
-    actors.emplace_back(std::make_shared<Sonar>(this));
-    
+    actors.emplace_back(std::make_shared<RegProtester>(this));
     
     
     return GWSTATUS_CONTINUE_GAME;
@@ -128,13 +124,22 @@ public:
     
     /// do something
     ice_man->doSomething();
-    for (const auto& item : actors) {
-      if (item->isAlive()) {
-        item->doSomething();
+    for (const auto& actor : actors) {
+      if (actor->isAlive()) {
+        actor->doSomething();
       }
     }
     
-//    int goodie = rand() % goodie_spawn_probability;
+    int goodie = rand() % goodie_spawn_probability;
+    if (goodie == 0) {
+      int sonar_or_water = rand() % 5;
+      if (sonar_or_water == 0) {
+        actors.emplace_back(std::make_shared<Sonar>(this));
+      }
+      else {
+        actors.emplace_back(std::make_shared<Water>(5, 60, this));
+      }
+    }
     
     /// counting ticks
     if (timeToAddProtester == 0) {
@@ -148,6 +153,7 @@ public:
       --timeToAddProtester;
     }
     
+    /// deallocate dead actors
 //    std::remove_if(actors.begin(), actors.end(), [](std::shared_ptr<Actor> actor) {
 //      return (!actor->isAlive()) ? true : false;
 //    });
@@ -173,8 +179,8 @@ public:
     goodie_spawn_probability = 0;
 	}
   
-  std::shared_ptr<Iceman> getIce_man() { return ice_man; }
-  std::string setPrecision(const unsigned int& val, const unsigned int& precision);
+  std::shared_ptr<Iceman> getIce_man() const { return ice_man; }
+  std::string setPrecision(const unsigned int& val, const unsigned int& precision) const;
   void setDisplayText();
   void initIce();
   void initGold();
@@ -190,15 +196,13 @@ public:
   
   void findGoodies(const int& x, const int& y); /// using sonar
   void dropGold(const int& x, const int& y); /// using gold
-  void squirtWater(const int& x, const int& y, const Actor::Direction dir); /// using water
-  void bribeProtester(); // not complete. need to add arguments
+  void squirtWater(const int& x, const int& y, const Actor::Direction& dir); /// using water
+  void bribeProtester(const int& x, const int& y); // not complete. may arguments get added
   
   bool isInRange(const int& x1, const int& y1, const int& x2, const int& y2, const float& radius) const {
-    if (sqrt(pow(x1-x2, 2) + pow(y1-y2, 2)) <= radius) return true;
-    else return false;
+    return (sqrt(pow(x1-x2, 2) + pow(y1-y2, 2)) <= radius) ? true : false;
   }
   bool isOccupied(const int& x, const int& y, const float& radius) const {
-    /// check if there's any other actors within 6.0 radius
     for (const auto& actor : actors) {
       if (isInRange(x, y, actor->getX(), actor->getY(), radius)) return true;
     }

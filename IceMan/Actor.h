@@ -3,10 +3,10 @@
 
 #include "GraphObject.h"
 
-class StudentWorld;
+class StudentWorld; // incomplete type declaration
 enum State { TEMP, WAIT, FALL, STABLE, REST, PERM };
 
-// Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
+
 class Actor : public GraphObject {
 public:
     Actor(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
@@ -43,8 +43,8 @@ public:
     Character(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
         : Actor(imageID, startX, startY, stud_world, dir, size, depth) {}
     virtual ~Character() {}
-    virtual void doSomething() = 0;
-    virtual void getAnnoyed(unsigned int damage) { health -= damage; } // both iceman and protester get annoyed
+    virtual void doSomething() override = 0;
+    virtual void getAnnoyed(unsigned int damage) { health -= damage; } /// both iceman and protester get annoyed
     virtual int getHP() const { return health; }
 };
 
@@ -62,7 +62,10 @@ public:
     virtual void doSomething() override;
     virtual void addGold() { ++i_golds; }
     virtual void addWater() { i_waters += 5; }
-    virtual void addSonar() { ++i_sonars; }
+    virtual void addSonar() { i_sonars += 2; }
+    virtual void useGold() { --i_golds; }
+    virtual void useWater() { --i_waters; }
+    virtual void useSonar() { --i_sonars; }
     virtual int getGold() const { return i_golds; }
     virtual int getWater() const { return i_waters; }
     virtual int getSonar() const { return i_sonars; }
@@ -70,30 +73,30 @@ public:
 
 class Protester : public Character {
 public:
-    Protester(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
-        : Character(imageID, startX, startY, stud_world, dir, size, depth) {}
+    Protester(int imageID, StudentWorld* stud_world)
+        : Character(imageID, 60, 60, stud_world, left, 1, 0) {}
     virtual ~Protester() {}
     virtual void doSomething() = 0;
 };
 
 class RegProtester : public Protester {
 public:
-    RegProtester(int startX, int startY, StudentWorld* stud_world)
-        : Protester(IID_PROTESTER, startX, startY, stud_world, left, 1, 0) {
+    RegProtester(StudentWorld* stud_world)
+        : Protester(IID_PROTESTER, stud_world) {
         setVisible(true);
     }
     virtual ~RegProtester() {}
-    virtual void doSomething() {}
+    virtual void doSomething() { /*moveTo(getX()-1, getY());*/ }
 };
 
 
-
+/*================ GOODIES ================*/
 class Goodies : public Actor {
 public:
     Goodies(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
         : Actor(imageID, startX, startY, stud_world, dir, size, depth) {}
     virtual ~Goodies() {}
-    virtual void doSomething() = 0;
+    virtual void doSomething() override = 0;
 };
 
 class Oil : public Goodies {
@@ -118,23 +121,14 @@ public:
 
 class Sonar : public Goodies {
 public:
-    Sonar(int startX, int startY, StudentWorld* stud_world)
-        : Goodies(IID_SONAR, startX, startY, stud_world, right, 1, 2) {
+    Sonar(StudentWorld* stud_world)
+        : Goodies(IID_SONAR, 0, 60, stud_world, right, 1, 2) {
         setVisible(true); setState(TEMP);
     }
     virtual ~Sonar() {}
     virtual void doSomething() override;
-};
-
-class Boulder : public Goodies {
-public:
-    Boulder(int startX, int startY, StudentWorld* stud_world)
-        : Goodies(IID_BOULDER, startX, startY, stud_world, down, 1, 1) {
-        setVisible(true); setState(STABLE);
-    }
-    virtual ~Boulder() {}
-    virtual void doSomething() override;
 private:
+    unsigned int life_time{ 0 }; /// sonar could stay on the field for only for a certain time
 };
 
 class Water : public Goodies {
@@ -144,6 +138,38 @@ public:
         setVisible(true);
     }
     virtual ~Water() {}
+    virtual void doSomething() override;
+private:
+    unsigned int life_time{ 0 }; /// water could stay on the field for only for a certain time
+};
+
+
+/*================ ATTACK ================*/
+class Attack : public Actor {
+public:
+    Attack(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
+        : Actor(imageID, startX, startY, stud_world, dir, size, depth) {}
+    virtual ~Attack() {}
+    virtual void doSomething() override = 0;
+};
+
+class Boulder : public Attack {
+public:
+    Boulder(int startX, int startY, StudentWorld* stud_world)
+        : Attack(IID_BOULDER, startX, startY, stud_world, down, 1, 1) {
+        setVisible(true); setState(STABLE);
+    }
+    virtual ~Boulder() {}
+    virtual void doSomething() override;
+private:
+    unsigned int time_wait{ 0 };
+};
+
+class Squirt : public Attack {
+public:
+    Squirt(int startX, int startY, StudentWorld* stud_world)
+        : Attack(IID_WATER_SPURT, startX, startY, stud_world, right, 1, 1) {}
+    virtual ~Squirt() {}
     virtual void doSomething() override;
 };
 

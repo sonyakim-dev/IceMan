@@ -84,7 +84,7 @@ void RegProtester::doSomething() {
         break;
         
       case STAY :
-//        moveTo(getX()-1, getY()); // THIS IS TEST
+        moveTo(getX()-1, getY()); // THIS IS TEST
         move_ticks = 0;
         
         int x = getWorld()->getIce_man()->getX();

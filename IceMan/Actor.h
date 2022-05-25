@@ -4,7 +4,7 @@
 #include "GraphObject.h"
 
 class StudentWorld; // incomplete type declaration
-enum State { TEMP, WAIT, FALL, STABLE, REST, PERM, STAY, LEAVE };
+enum State { TEMP, PERM, WAIT, FALL, STABLE, STAY, LEAVE };
 
 
 class Actor : public GraphObject {
@@ -72,7 +72,7 @@ public:
 
 class Protester : public Character {
 protected:
-  int numSquareToMoveInCurrDir;
+  int move_straight_distance; /// numSquresToMoveInCurrentDirection
   int move_ticks {0};
   int non_resting_ticks {0};
   bool canShout = true;
@@ -82,13 +82,12 @@ public:
   virtual ~Protester() {}
   virtual void doSomething() override = 0;
   virtual void getAnnoyed(unsigned int damage) override = 0;
-  virtual void setMoveTicks(unsigned int ticks) { move_ticks = ticks; }
 };
 
 class RegProtester : public Protester {
 public:
   RegProtester(StudentWorld* stud_world)
-    : Protester(IID_PROTESTER, stud_world) { setVisible(true); hit_points = 5; setState(STAY); }
+  : Protester(IID_PROTESTER, stud_world) { setVisible(true); hit_points = 5; setState(STAY); move_straight_distance = rand() % 53 + 8; }
   virtual ~RegProtester() {}
   virtual void doSomething() override;
   virtual void getAnnoyed(unsigned int damage) override;
@@ -99,8 +98,8 @@ public:
   HardProtester(StudentWorld* stud_world)
     : Protester(IID_HARD_CORE_PROTESTER, stud_world) { setVisible(true); hit_points = 20; setState(STAY); }
   virtual ~HardProtester() {}
-  virtual void doSomething() override { moveTo(getX()-1, getY()); }
-  virtual void getAnnoyed(unsigned int damage) override {}
+  virtual void doSomething() override;
+  virtual void getAnnoyed(unsigned int damage) override;
 };
 
 
@@ -108,7 +107,7 @@ public:
 class Goodies : public Actor {
 public:
     Goodies(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
-        : Actor(imageID, startX, startY, stud_world, dir, size, depth){}
+        : Actor(imageID, startX, startY, stud_world, dir, size, depth) {}
     virtual ~Goodies() {}
     virtual void doSomething() override = 0;
 };

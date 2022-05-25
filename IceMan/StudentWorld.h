@@ -19,17 +19,18 @@ private:
   unsigned int num_oil {0}; /// curr num of oil left in the field
   unsigned int num_protester {0}; /// curr num of protester in the field
   unsigned int target_num_protester; /// num of protester should be created
-  unsigned int hardcore_spawn_probability {0};
-  unsigned int goodie_spawn_probability {0};
+  unsigned int hardcore_spawn_probability;
+  unsigned int goodie_spawn_probability;
   /// below is a tick counter
-  unsigned int timeToAddProtester {0};
-  
+  int timeToAddProtester;
+  bool isTheFirstTick = false;
   
 public:
 	StudentWorld(std::string assetDir) : GameWorld(assetDir) {}
   virtual ~StudentWorld() {}
 
-	virtual int init() override {
+	virtual int init() override
+  {
     std::srand((unsigned int)std::time(NULL)); /// to get random number
 
     /// initialize ice // Hi Sonya
@@ -45,9 +46,9 @@ public:
     
     /// number of items to be created
     int L = num_oil = std::min(2 + (int)getLevel(), 21); /// oil
-    int P = target_num_protester = std::min(15, int(2 + getLevel() * 1.5)); /// protester
     int B = std::min((int)getLevel() / 2 + 2, 9); /// boulder
     int G = std::max(5 - (int)getLevel() / 2, 2); /// gold
+    int P = target_num_protester = std::min(15, int(2 + getLevel() * 1.5)); /// protester
     
     /// make enough size for vector -> save memory and time
     actors.reserve(L + B + G + P + 10);
@@ -101,10 +102,7 @@ public:
     goodie_spawn_probability = getLevel() * 25 + 300;
     hardcore_spawn_probability = std::min(90, (int)getLevel() * 10 + 30);
     timeToAddProtester = std::max(25, 200 - (int)getLevel());
-    
-//    actors.emplace_back(std::make_shared<RegProtester>(this));
-//    ++num_protester;
-    
+    isTheFirstTick = true;
     
     return GWSTATUS_CONTINUE_GAME;
   }
@@ -133,6 +131,7 @@ public:
       }
     }
     
+    /// add water or sonar
     int addGoodie = rand() % goodie_spawn_probability;
     if (addGoodie == 0) {
       int sonar_or_water = rand() % 5;
@@ -140,13 +139,15 @@ public:
         actors.emplace_back(std::make_shared<Sonar>(this));
       }
       else {
-        actors.emplace_back(std::make_shared<Water>(5, 60, this));
+        actors.emplace_back(std::make_shared<Water>(5, 60, this)); // FIX: x, y coordinate
       }
     }
     
     
-    
-    if (timeToAddProtester == 0) {
+    /// add protester
+    if (timeToAddProtester == 0 || isTheFirstTick) {
+      isTheFirstTick = false;
+      
       int addHardcore = rand() % 101;
       if (addHardcore <= hardcore_spawn_probability) {
         actors.emplace_back(std::make_shared<HardProtester>(this));
@@ -154,20 +155,23 @@ public:
       else {
         actors.emplace_back(std::make_shared<RegProtester>(this));
       }
-      ++num_protester;
+      ++num_protester; // FIX -> should put protesters in another vector?
+      
       if (num_protester < target_num_protester) { /// if curr num_protester in field is less than max creatable protester num, recount time
         timeToAddProtester = std::max(25, 200 - (int)getLevel());
       }
-      else timeToAddProtester = -1;
+      else timeToAddProtester = -1; /// if (num_protester == target_num_protester), then stop coundting ticks
     }
-    else {
-      --timeToAddProtester;
-    }
+    else if (timeToAddProtester > 0) --timeToAddProtester;
+    
     
     /// deallocate dead actors
-//    std::remove_if(actors.begin(), actors.end(), [](std::shared_ptr<Actor> actor) {
-//      return (!actor->isAlive()) ? true : false;
-//    });
+    for (int i = 0; i < actors.size(); ++i) {
+      if (!actors.at(i)->isAlive()) {
+        actors.at(i) = std::move(actors.at(actors.size()-1));
+        actors.pop_back();
+      }
+    }
     
     return GWSTATUS_CONTINUE_GAME;
 	}
@@ -191,7 +195,7 @@ public:
 	}
   
   std::shared_ptr<Iceman> getIce_man() const { return ice_man; }
-  std::string setPrecision(const unsigned int& val, const unsigned int& precision) const;
+  std::string setPrecision(const unsigned int& val, const unsigned int&& precision, const char&& placeholder) const;
   void setDisplayText();
   void initIce();
   void initGold();
@@ -209,10 +213,8 @@ public:
   void dropGold(const int& x, const int& y); /// using gold
   void squirtWater(const int& x, const int& y, const Actor::Direction& dir); /// using water
   void bribeProtester(const int& x, const int& y); // not complete. may arguments get added
-  void shoutAtIceman() {
-    playSound(SOUND_PROTESTER_YELL);
-    ice_man->getAnnoyed(2);
-  }
+  
+  void shoutAtIceman() { playSound(SOUND_PROTESTER_YELL); ice_man->getAnnoyed(2); }
   
   bool isInRange(const int& x1, const int& y1, const int& x2, const int& y2, const float& radius) const {
     return (sqrt(pow(x1-x2, 2) + pow(y1-y2, 2)) <= radius) ? true : false;

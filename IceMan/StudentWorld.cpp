@@ -5,17 +5,17 @@ GameWorld* createStudentWorld(std::string assetDir)
 	return new StudentWorld(assetDir);
 }
 
-std::string StudentWorld::setPrecision(const unsigned int& val, const unsigned int& precision) const {
+std::string StudentWorld::setPrecision(const unsigned int& val, const unsigned int&& precision, const char&& placeholder) const {
   int digit = (val < 10) ? 1 : int(log10(val) + 1); /// prevent log10(0) error
   if (digit > precision) return std::to_string(val); /// if val is longer than the given precision, just print val
-  else return std::string(precision - digit, '0').append(std::to_string(val));
+  else return std::string(precision - digit, placeholder).append(std::to_string(val));
 }
 
 void StudentWorld::setDisplayText() {
-    std::string s = "Lvl: " + setPrecision(getLevel(), 2) + "  Lives: " + std::to_string(getLives()) +
-        "  Hlth: " + setPrecision(ice_man->getHP()*10, 3) + "%  Wtr: " + setPrecision(ice_man->getWater(), 2) +
-        "  Gld: " + setPrecision(ice_man->getGold(), 2) + "  Oil Left: " + setPrecision(num_oil, 2) +
-        "  Sonar: " + setPrecision(ice_man->getSonar(), 2) + "  Scr: " + setPrecision(getScore(), 6);
+    std::string s = "Lvl: " + setPrecision(getLevel(), 2, ' ') + "  Lives: " + std::to_string(getLives()) +
+        "  Hlth: " + setPrecision(ice_man->getHP()*10, 2, ' ') + "%  Wtr: " + setPrecision(ice_man->getWater(), 2, ' ') +
+        "  Gld: " + setPrecision(ice_man->getGold(), 2, ' ') + "  Oil Left: " + setPrecision(num_oil, 2, ' ') +
+        "  Sonar: " + setPrecision(ice_man->getSonar(), 2, ' ') + "  Scr: " + setPrecision(getScore(), 6, '0');
 
     setGameStatText(s);
 }
@@ -85,33 +85,25 @@ bool StudentWorld::isIcy(const int& x, const int& y, const int& dir) const {
   switch (dir) {
     case Actor::up :
       for (int i = 0; i < 4; ++i) {
-        if (ice[x + i][y + 4]->isAlive()) {
-          return true;
-        }
+        if (ice[x + i][y + 4]->isAlive()) { return true; }
       }
       break;
       
     case Actor::down :
       for (int i = 0; i < 4; ++i) {
-        if (ice[x + i][y - 1]->isAlive()) {
-          return true;
-        }
+        if (ice[x + i][y - 1]->isAlive()) { return true; }
       }
       break;
       
     case Actor::right :
       for (int i = 0; i < 4; ++i) {
-        if (ice[x + 4][y + i]->isAlive()) {
-          return true;
-        }
+        if (ice[x + 4][y + i]->isAlive()) { return true; }
       }
       break;
       
     case Actor::left :
       for (int i = 0; i < 4; ++i) {
-        if (ice[x - 1][y + i]->isAlive()) {
-          return true;
-        }
+        if (ice[x - 1][y + i]->isAlive()) { return true; }
       }
       break;
   }
@@ -122,8 +114,7 @@ bool StudentWorld::isBouldery(const int& x, const int& y, const int& dir) const 
   for (const auto& actor : actors) {
     if (!actor->isAlive()) continue;
     
-    if (typeid(Boulder) == typeid(*actor) &&
-        isInRange(x, y, actor->getX(), actor->getY(), 4.0f)) {
+    if (typeid(Boulder) == typeid(*actor) && isInRange(x, y, actor->getX(), actor->getY(), 4.0f)) {
       switch (dir) {
         case Actor::up :
           if (actor->getY() > y) return true;

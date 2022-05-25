@@ -57,8 +57,7 @@ void Iceman::doSomething() {
         break;
         
       case KEY_PRESS_ESCAPE :
-        /// completely get annoyed and abort the curr lev
-        getAnnoyed(100);
+        getAnnoyed(100); /// completely get annoyed and abort the curr lev
         break;
     }
   }
@@ -73,17 +72,71 @@ void Iceman::getAnnoyed(unsigned int damage) {
 }
 
 
-/*================ PROTESTER ================*/
+/*================ REG PROTESTER ================*/
 void RegProtester::doSomething() {
   if (!isAlive()) return;
   
   if (move_ticks == std::max(0, 3 - (int)getWorld()->getLevel() / 4)) {
     switch (getState()) {
       case LEAVE :
-        if (getX() == 60 && getY() == 60) {
-          setDead();
-          return;
+        if (getX() == 60 && getY() == 60) { setDead(); return; }
+        // ADD: move back to 60x60
+        break;
+        
+      case STAY :
+//        moveTo(getX()-1, getY()); // THIS IS TEST
+        move_ticks = 0;
+        
+        int x = getWorld()->getIce_man()->getX();
+        int y = getWorld()->getIce_man()->getY();
+        
+        if (getWorld()->isInRange(getX(), getY(), x, y, 4.0f)) {
+          if (canShout) {
+            switch (getDirection()) {
+              case up :
+                if (getY() < y) { getWorld()->shoutAtIceman(); canShout = false; }
+                break;
+              case down :
+                if (getY() > y) { getWorld()->shoutAtIceman(); canShout = false; }
+                break;
+              case right :
+                if (getX() < x) { getWorld()->shoutAtIceman(); canShout = false; }
+                break;
+              case left :
+                if (getX() > x) { getWorld()->shoutAtIceman(); canShout = false; }
+                break;
+            }
+          }
+          else { // if "can't shout" state
+            if (non_resting_ticks == 15) {
+              non_resting_ticks = 0;
+              canShout = true;
+            }
+//            else { ++non_resting_ticks; }
+          }
         }
+        break;
+    }
+  }
+  else { ++move_ticks; ++non_resting_ticks; }
+}
+
+void RegProtester::getAnnoyed(unsigned int damage) {
+  hit_points -= damage;
+  if (hit_points <= 0) {
+    getWorld()->playSound(SOUND_PROTESTER_GIVE_UP);
+    setState(LEAVE);
+  }
+}
+
+/*================ HARD PROTESTER ================*/
+void HardProtester::doSomething() {
+  if (!isAlive()) return;
+  
+  if (move_ticks == std::max(0, 3 - (int)getWorld()->getLevel() / 4)) {
+    switch (getState()) {
+      case LEAVE :
+        if (getX() == 60 && getY() == 60) { setDead(); return; }
         // ADD: move back to 60x60
         break;
         
@@ -111,29 +164,25 @@ void RegProtester::doSomething() {
                 break;
             }
           }
-          else {
+          else { // if in "can't shout" state
             if (non_resting_ticks == 15) {
               non_resting_ticks = 0;
               canShout = true;
             }
-            else {
-              ++non_resting_ticks;
-            }
+            else { ++non_resting_ticks; }
           }
         }
         break;
     }
   }
-  else {
-    ++move_ticks;
-  }
+  else { ++move_ticks; }
 }
 
-void RegProtester::getAnnoyed(unsigned int damage) {
+void HardProtester::getAnnoyed(unsigned int damage) {
   hit_points -= damage;
   if (hit_points <= 0) {
     getWorld()->playSound(SOUND_PROTESTER_GIVE_UP);
-    setDead();
+    setState(LEAVE);
   }
 }
 
@@ -163,10 +212,10 @@ void Gold::doSomething() {
 
   switch (getState()) {
     case TEMP : /// TEMP means gold is pickable by protestor and it will be deleted after few ticks
-      if (getWorld()->isInRange(/*protester's x*/10, /*protester's y*/10, getX(), getY(), 3.0f)) {
+      if (getWorld()->isInRange(/*FIX:protester's x*/10, /*FIX:protester's y*/10, getX(), getY(), 3.0f)) {
         getWorld()->bribeProtester(10, 10);
-        // after a certain tick,
         setDead();
+        return;
       }
       else {
         if (life_time == 100) {
@@ -206,7 +255,6 @@ void Sonar::doSomething() {
   
   if (life_time == std::max(100, 300 - 10 * (int)getWorld()->getLevel())) { // need improvement
     setDead();
-    //    life_time = 0;
   }
   else {
     ++life_time;
@@ -259,12 +307,10 @@ void Boulder::doSomething() {
           getWorld()->isBouldery(getX(), getY(), down) || //?
           /// 3) when it hit the ice
           getWorld()->isIcy(getX(), getY(), down) )
-      {
-        setDead();
-      }
+      { setDead(); }
       
       /// when it hit the iceman
-      if (getWorld()->isInRange(getX(), getY(), getWorld()->getIce_man()->getX(), getWorld()->getIce_man()->getY(), 3.0f)) {
+      if (getWorld()->isInRange(getX(), getY(), getWorld()->getIce_man()->getX(), getWorld()->getIce_man()->getY(), 3.0f)){
         getWorld()->getIce_man()->getAnnoyed(100);
       }
       /// when it hit the protester

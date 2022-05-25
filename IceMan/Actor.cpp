@@ -112,13 +112,13 @@ void RegProtester::doSomething() {
               non_resting_ticks = 0;
               canShout = true;
             }
-//            else { ++non_resting_ticks; }
+            else { ++non_resting_ticks; }
           }
         }
         break;
     }
   }
-  else { ++move_ticks; ++non_resting_ticks; }
+  else { ++move_ticks; }
 }
 
 void RegProtester::getAnnoyed(unsigned int damage) {

@@ -24,6 +24,7 @@ private:
   /// below is a tick counter
   unsigned int timeToAddProtester {0};
   
+  
 public:
 	StudentWorld(std::string assetDir) : GameWorld(assetDir) {}
   virtual ~StudentWorld() {}
@@ -98,9 +99,11 @@ public:
     
     
     goodie_spawn_probability = getLevel() * 25 + 300;
+    hardcore_spawn_probability = std::min(90, (int)getLevel() * 10 + 30);
     timeToAddProtester = std::max(25, 200 - (int)getLevel());
     
-    actors.emplace_back(std::make_shared<RegProtester>(this));
+//    actors.emplace_back(std::make_shared<RegProtester>(this));
+//    ++num_protester;
     
     
     return GWSTATUS_CONTINUE_GAME;
@@ -130,8 +133,8 @@ public:
       }
     }
     
-    int goodie = rand() % goodie_spawn_probability;
-    if (goodie == 0) {
+    int addGoodie = rand() % goodie_spawn_probability;
+    if (addGoodie == 0) {
       int sonar_or_water = rand() % 5;
       if (sonar_or_water == 0) {
         actors.emplace_back(std::make_shared<Sonar>(this));
@@ -141,13 +144,21 @@ public:
       }
     }
     
-    /// counting ticks
+    
+    
     if (timeToAddProtester == 0) {
-      // TEST OBJ
-      actors.emplace_back(std::make_shared<RegProtester>(this));
-      if (num_protester < target_num_protester) { /// if curr num_protester in field is less than max creatable protester num, recount time
-        timeToAddProtester = 0;
+      int addHardcore = rand() % 101;
+      if (addHardcore <= hardcore_spawn_probability) {
+        actors.emplace_back(std::make_shared<HardProtester>(this));
       }
+      else {
+        actors.emplace_back(std::make_shared<RegProtester>(this));
+      }
+      ++num_protester;
+      if (num_protester < target_num_protester) { /// if curr num_protester in field is less than max creatable protester num, recount time
+        timeToAddProtester = std::max(25, 200 - (int)getLevel());
+      }
+      else timeToAddProtester = -1;
     }
     else {
       --timeToAddProtester;
@@ -198,6 +209,10 @@ public:
   void dropGold(const int& x, const int& y); /// using gold
   void squirtWater(const int& x, const int& y, const Actor::Direction& dir); /// using water
   void bribeProtester(const int& x, const int& y); // not complete. may arguments get added
+  void shoutAtIceman() {
+    playSound(SOUND_PROTESTER_YELL);
+    ice_man->getAnnoyed(2);
+  }
   
   bool isInRange(const int& x1, const int& y1, const int& x2, const int& y2, const float& radius) const {
     return (sqrt(pow(x1-x2, 2) + pow(y1-y2, 2)) <= radius) ? true : false;

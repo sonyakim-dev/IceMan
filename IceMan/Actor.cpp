@@ -74,6 +74,61 @@ void Iceman::getAnnoyed(unsigned int damage) {
 
 
 /*================ PROTESTER ================*/
+void RegProtester::doSomething() {
+  if (!isAlive()) return;
+  
+  if (move_ticks == std::max(0, 3 - (int)getWorld()->getLevel() / 4)) {
+    switch (getState()) {
+      case LEAVE :
+        if (getX() == 60 && getY() == 60) {
+          setDead();
+          return;
+        }
+        // ADD: move back to 60x60
+        break;
+        
+      case STAY :
+        moveTo(getX()-1, getY()); // THIS IS TEST
+        move_ticks = 0;
+        
+        int x = getWorld()->getIce_man()->getX();
+        int y = getWorld()->getIce_man()->getY();
+        
+        if (getWorld()->isInRange(getX(), getY(), x, y, 4.0f)) {
+          if (canShout) {
+            switch (getDirection()) {
+              case up :
+                if (getY() < y) { getWorld()->shoutAtIceman(); canShout = false; }
+                break;
+              case down :
+                if (getY() > y) { getWorld()->shoutAtIceman(); canShout = false; }
+                break;
+              case right :
+                if (getX() < x) { getWorld()->shoutAtIceman(); canShout = false; }
+                break;
+              case left :
+                if (getX() > x) { getWorld()->shoutAtIceman(); canShout = false; }
+                break;
+            }
+          }
+          else {
+            if (non_resting_ticks == 15) {
+              non_resting_ticks = 0;
+              canShout = true;
+            }
+            else {
+              ++non_resting_ticks;
+            }
+          }
+        }
+        break;
+    }
+  }
+  else {
+    ++move_ticks;
+  }
+}
+
 void RegProtester::getAnnoyed(unsigned int damage) {
   hit_points -= damage;
   if (hit_points <= 0) {

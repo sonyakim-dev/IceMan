@@ -4,7 +4,7 @@
 #include "GraphObject.h"
 
 class StudentWorld; // incomplete type declaration
-enum State { TEMP, WAIT, FALL, STABLE, REST, PERM };
+enum State { TEMP, WAIT, FALL, STABLE, REST, PERM, STAY, LEAVE };
 
 
 class Actor : public GraphObject {
@@ -38,7 +38,7 @@ public:
 /*================ CHARACTER ================*/
 class Character : public Actor {
 protected:
-  int hit_points {100};
+  int hit_points;
 public:
   Character(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
     : Actor(imageID, startX, startY, stud_world, dir, size, depth) {}
@@ -55,7 +55,7 @@ private:
   unsigned int i_sonars {1};
 public:
   Iceman(StudentWorld* stud_world)
-    : Character(IID_PLAYER, 30, 60, stud_world, right, 1.0, 0) { setVisible(true); }
+    : Character(IID_PLAYER, 30, 60, stud_world, right, 1.0, 0) { setVisible(true); hit_points = 10; }
   virtual ~Iceman() {}
   virtual void doSomething() override;
   virtual void getAnnoyed(unsigned int damage) override;
@@ -71,21 +71,36 @@ public:
 };
 
 class Protester : public Character {
+protected:
+  int numSquareToMoveInCurrDir;
+  int move_ticks {0};
+  int non_resting_ticks {0};
+  bool canShout = true;
 public:
   Protester(int imageID, StudentWorld* stud_world)
     : Character(imageID, 60, 60, stud_world, left, 1, 0) {}
   virtual ~Protester() {}
   virtual void doSomething() override = 0;
   virtual void getAnnoyed(unsigned int damage) override = 0;
+  virtual void setMoveTicks(unsigned int ticks) { move_ticks = ticks; }
 };
 
 class RegProtester : public Protester {
 public:
   RegProtester(StudentWorld* stud_world)
-    : Protester(IID_PROTESTER, stud_world) { setVisible(true); }
+    : Protester(IID_PROTESTER, stud_world) { setVisible(true); hit_points = 5; setState(STAY); }
   virtual ~RegProtester() {}
-  virtual void doSomething() { /*moveTo(getX()-1, getY());*/ }
-  virtual void getAnnoyed(unsigned int damage);
+  virtual void doSomething() override;
+  virtual void getAnnoyed(unsigned int damage) override;
+};
+
+class HardProtester : public Protester {
+public:
+  HardProtester(StudentWorld* stud_world)
+    : Protester(IID_HARD_CORE_PROTESTER, stud_world) { setVisible(true); hit_points = 20; setState(STAY); }
+  virtual ~HardProtester() {}
+  virtual void doSomething() override { moveTo(getX()-1, getY()); }
+  virtual void getAnnoyed(unsigned int damage) override {}
 };
 
 

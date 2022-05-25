@@ -13,7 +13,7 @@ std::string StudentWorld::setPrecision(const unsigned int& val, const unsigned i
 
 void StudentWorld::setDisplayText() {
     std::string s = "Lvl: " + setPrecision(getLevel(), 2) + "  Lives: " + std::to_string(getLives()) +
-        "  Hlth: " + setPrecision(ice_man->getHP(), 3) + "%  Wtr: " + setPrecision(ice_man->getWater(), 2) +
+        "  Hlth: " + setPrecision(ice_man->getHP()*10, 3) + "%  Wtr: " + setPrecision(ice_man->getWater(), 2) +
         "  Gld: " + setPrecision(ice_man->getGold(), 2) + "  Oil Left: " + setPrecision(num_oil, 2) +
         "  Sonar: " + setPrecision(ice_man->getSonar(), 2) + "  Scr: " + setPrecision(getScore(), 6);
 
@@ -122,26 +122,20 @@ bool StudentWorld::isBouldery(const int& x, const int& y, const int& dir) const 
   for (const auto& actor : actors) {
     if (!actor->isAlive()) continue;
     
-    if (typeid(Boulder) == typeid(*actor)) {
+    if (typeid(Boulder) == typeid(*actor) &&
+        isInRange(x, y, actor->getX(), actor->getY(), 4.0f)) {
       switch (dir) {
         case Actor::up :
-          if (isInRange(x, y, actor->getX(), actor->getY(), 4.0f) && actor->getY() > y)
-            return true;
+          if (actor->getY() > y) return true;
           break;
-
         case Actor::down :
-          if (isInRange(x, y, actor->getX(), actor->getY(), 4.0f) && actor->getY() < y)
-            return true;
+          if (actor->getY() < y) return true;
           break;
-
         case Actor::right :
-          if (isInRange(x, y, actor->getX(), actor->getY(), 4.0f) && actor->getX() > x)
-            return true;
+          if (actor->getX() > x) return true;
           break;
-
         case Actor::left :
-          if (isInRange(x, y, actor->getX(), actor->getY(), 4.0f) && actor->getX() < x)
-            return true;
+          if (actor->getX() < x) return true;
           break;
       }
     }

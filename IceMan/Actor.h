@@ -78,13 +78,14 @@ protected:
   int move_straight_distance; /// numSquresToMoveInCurrentDirection
   int resting_ticks {0};
   int non_resting_ticks {0};
+  int stalled_ticks {0};
   bool canShout = true;
 public:
   Protester(int imageID, StudentWorld* stud_world)
     : Character(imageID, 60, 60, stud_world, left, 1, 0) {}
   virtual ~Protester() {}
   virtual void doSomething() override = 0;
-  virtual void getAnnoyed(unsigned int damage) override = 0;
+  virtual void getAnnoyed(unsigned int damage) override;
   virtual bool findNearestPath(int startX, int startY, int finalX, int finalY, Direction& dir, int& steps) const;
 };
 
@@ -94,7 +95,6 @@ public:
     : Protester(IID_PROTESTER, stud_world) { setVisible(true); setHP(5); setState(STAY); move_straight_distance = rand() % 53 + 8;/*not sure about this*/ }
   virtual ~RegProtester() {}
   virtual void doSomething() override;
-  virtual void getAnnoyed(unsigned int damage) override;
 };
 
 class HardProtester : public Protester {
@@ -103,9 +103,7 @@ public:
     : Protester(IID_HARD_CORE_PROTESTER, stud_world) { setVisible(true); setHP(20); setState(STAY); }
   virtual ~HardProtester() {}
   virtual void doSomething() override;
-  virtual void getAnnoyed(unsigned int damage) override;
 private:
-  int stare_gold_ticks {0};
 };
 
 

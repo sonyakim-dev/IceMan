@@ -97,29 +97,47 @@ bool Protester::findNearestPath(int startX, int startY, int finalX, int finalY, 
     currStep = stepArray[currX][currY];
     ++currStep;
     
-    if (!getWorld()->isIcy(currX, currY, up) && !getWorld()->isBouldery(currX, currY, up) && stepArray[currX][currY+1] == 9999 && currY < 60) {
+    if (!getWorld()->isIcy(currX, currY, up) && !getWorld()->isBouldery(currX, currY, up) &&
+        stepArray[currX][currY+1] == 9999 && currY < 60)
+    {
       stepArray[currX][currY+1] = currStep;
       xy.push(std::make_pair(currX, currY+1));
     }
-    if (!getWorld()->isIcy(currX, currY, down) && !getWorld()->isBouldery(currX, currY, down) && stepArray[currX][currY-1] == 9999 && currY > 0) {
+    if (!getWorld()->isIcy(currX, currY, down) && !getWorld()->isBouldery(currX, currY, down) &&
+        stepArray[currX][currY-1] == 9999 && currY > 0)
+    {
       stepArray[currX][currY-1] = currStep;
       xy.push(std::make_pair(currX, currY-1));
     }
-    if (!getWorld()->isIcy(currX, currY, right) && !getWorld()->isBouldery(currX, currY, right) && stepArray[currX+1][currY] == 9999 && currX < 60) {
+    if (!getWorld()->isIcy(currX, currY, right) && !getWorld()->isBouldery(currX, currY, right) &&
+        stepArray[currX+1][currY] == 9999 && currX < 60)
+    {
       stepArray[currX+1][currY] = currStep;
       xy.push(std::make_pair(currX+1, currY));
     }
-    if (!getWorld()->isIcy(currX, currY, left) && !getWorld()->isBouldery(currX, currY, left) && stepArray[currX+1][currY] == 9999 && currX > 0) {
+    if (!getWorld()->isIcy(currX, currY, left) && !getWorld()->isBouldery(currX, currY, left) &&
+        stepArray[currX+1][currY] == 9999 && currX > 0)
+    {
       stepArray[currX-1][currY] = currStep;
       xy.push(std::make_pair(currX-1, currY));
     }
-    
-    xy.pop();
-    
-    
   }
   
+  
+  
   return false;
+}
+
+void Protester::getAnnoyed(unsigned int damage) {
+  dropHP(damage);
+  
+  if (getHP() <= 0 && getState() != LEAVE) {
+    getWorld()->playSound(SOUND_PROTESTER_GIVE_UP);
+    setState(LEAVE);
+  }
+  else {
+    getWorld()->playSound(SOUND_PROTESTER_ANNOYED);
+  }
 }
 
 /*================ REGULAR PROTESTER ================*/
@@ -128,6 +146,14 @@ void RegProtester::doSomething() {
   
   if (resting_ticks == std::max(0, 3 - (int)getWorld()->getLevel() / 4)) {
     switch (getState()) {
+      case WAIT: /// when shot by water
+        if (stalled_ticks == std::max(50, 100 - (int)getWorld()->getLevel() * 10)) {
+          setState(STAY);
+        }
+        else {
+          ++stalled_ticks;
+        }
+        break;
       case LEAVE : /// get annoyed and leave the oil field
         if (getX() == 60 && getY() == 60) { setDead(); return; }
         // ADD: move back to 60x60
@@ -159,7 +185,7 @@ void RegProtester::doSomething() {
                 break;
             }
           }
-          else { /// if "can't shout" state
+          else { /// when in "can't shout" state
             if (non_resting_ticks == 15) {
               non_resting_ticks = 0;
               canShout = true;
@@ -167,36 +193,32 @@ void RegProtester::doSomething() {
             else { ++non_resting_ticks; }
           }
         }
-        else if (getX() == x || getY() == y) { /// is in a straight horizontal or vertical line of sight to iceman
+        else if (getX() == x || getY() == y) { /// if protester is in a straight horizontal or vertical line of sight to iceman
           if (getX() == x) {
-            if (getY() - y < 0 ) {
+            if (getY() - y < 0 ) { /// if protester is below the iceman
+              
               setDirection(up);
             }
-            else {
+            else { /// if protester is above the iceman
               setDirection(down);
             }
           }
           else {
-            if (getX() - x < 0 ) {
+            if (getX() - x < 0 ) { /// if protester is on the left side of the iceman
               setDirection(right);
             }
-            else {
+            else { /// if protester is on the right side of the iceman
               setDirection(left);
             }
           }
+        }
+        else { /// if protester can't directly see the iceman
+          
         }
         break;
     }
   }
   else { ++resting_ticks; }
-}
-
-void RegProtester::getAnnoyed(unsigned int damage) {
-  dropHP(damage);
-  if (getHP() <= 0) {
-    getWorld()->playSound(SOUND_PROTESTER_GIVE_UP);
-    setState(LEAVE);
-  }
 }
 
 /*================ HARD PROTESTER ================*/
@@ -205,12 +227,12 @@ void HardProtester::doSomething() {
   
   if (resting_ticks == std::max(0, 3 - (int)getWorld()->getLevel() / 4)) {
     switch (getState()) {
-      case WAIT: /// when bribed by gold
-        if (stare_gold_ticks == std::max(50, 100 - (int)getWorld()->getLevel() * 10)) {
+      case WAIT: /// when bribed by gold or shot by water
+        if (stalled_ticks == std::max(50, 100 - (int)getWorld()->getLevel() * 10)) {
           setState(STAY);
         }
         else {
-          ++stare_gold_ticks;
+          ++stalled_ticks;
         }
         break;
         
@@ -243,7 +265,7 @@ void HardProtester::doSomething() {
                 break;
             }
           }
-          else { // if in "can't shout" state
+          else { /// if in "can't shout" state
             if (non_resting_ticks == 15) {
               non_resting_ticks = 0;
               canShout = true;
@@ -251,45 +273,11 @@ void HardProtester::doSomething() {
             else { ++non_resting_ticks; }
           }
         }
-        else if (getX() == x || getY() == y) { /// is in a straight horizontal or vertical line of sight to iceman
-          
-          if (getX() == x) {
-            if (getY() - y < 0 ) {
-//              if(isBoulderOnWay(up, x, y-getY()) == false) {
-//                setDirection(up);
-//              }
-            }
-            else {
-//              if(isBoulderOnWay(down, x, getY()-y) == false) {
-//                setDirection(down);
-//              }
-            }
-          }
-          else {
-            if (getX() - x < 0 ) {
-//              if(isBoulderOnWay(right, x-getX(), y)) {
-//                setDirection(right);
-//              }
-            }
-            else {
-//              if(isBoulderOnWay(left, getX()-x, y)) {
-//                setDirection(left);
-//              }
-            }
-          }
-        }
+        // this is hardcore..
         break;
     }
   }
   else { ++resting_ticks; }
-}
-
-void HardProtester::getAnnoyed(unsigned int damage) {
-  dropHP(damage);
-  if (getHP() <= 0) {
-    getWorld()->playSound(SOUND_PROTESTER_GIVE_UP);
-    setState(LEAVE);
-  }
 }
 
 
@@ -409,7 +397,7 @@ void Boulder::doSomething() {
       }
       /// when it hit the protester
       if (getWorld()->bonkProtester(getX(), getY())) {
-        // ADD
+        // ADD: 
       }
       
       moveTo(getX(), getY()-1);

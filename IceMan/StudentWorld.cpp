@@ -138,31 +138,6 @@ bool StudentWorld::isBouldery(const int& x, const int& y, const int& dir) const 
   return false;
 }
 
-bool StudentWorld::isIcyOrBouldery(const int& x, const int& y, const int& dir) const {
-  // check both ice and boulder
-  for (const auto& actor : actors) {
-    if (!actor->isAlive()) continue;
-    
-    if (typeid(Boulder) == typeid(*actor) && isInRange(x, y, actor->getX(), actor->getY(), 4.0f)) {
-      switch (dir) {
-        case Actor::up :
-          if (actor->getY() > y) { return true; }
-          break;
-        case Actor::down :
-          if (actor->getY() < y) { return true; }
-          break;
-        case Actor::right :
-          if (actor->getX() > x) { return true; }
-          break;
-        case Actor::left :
-          if (actor->getX() < x) { return true; }
-          break;
-      }
-    }
-  }
-  return false;
-}
-
 void StudentWorld::initGold() {}
 void StudentWorld::initSonar() {}
 void StudentWorld::initBoulder() {}
@@ -241,9 +216,8 @@ bool StudentWorld::bribeProtester(const int& goldX, const int& goldY) {
 bool StudentWorld::shootProtester(const int& waterX, const int& waterY) {
   for (const auto& protester : protesters) {
     if (isInRange(waterX, waterY, protester->getX(), protester->getY(), 3.0f)) {
-      // ADD
+      protester->setState(WAIT); /// protester get stalled for a certain tick
       protester->getAnnoyed(2);
-      playSound(SOUND_PROTESTER_ANNOYED);
       return true;
     }
   }
@@ -254,9 +228,11 @@ bool StudentWorld::bonkProtester(const int& boulderX, const int& boulderY) {
   for (const auto& protester : protesters) {
     if (isInRange(boulderX, boulderY, protester->getX(), protester->getY(), 3.0f)) {
       // ADD
+      protester->getAnnoyed(100);
+      increaseScore(500);
       return true;
     }
   }
-  return true;
+  return false;
 }
 

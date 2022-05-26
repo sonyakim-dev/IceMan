@@ -85,6 +85,7 @@ public:
   virtual ~Protester() {}
   virtual void doSomething() override = 0;
   virtual void getAnnoyed(unsigned int damage) override = 0;
+  virtual bool findNearestPath(int startX, int startY, int finalX, int finalY, Direction& dir, int& steps) const;
 };
 
 class RegProtester : public Protester {

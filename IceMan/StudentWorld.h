@@ -135,9 +135,19 @@ public:
     
     /// add water or sonar
     if (rand() % goodie_spawn_probability == 0) {
-      (rand() % 5 == 0) ?
-        actors.emplace_back(std::make_shared<Sonar>(this))
-        : actors.emplace_back(std::make_shared<Water>(5, 60, this)); // FIX: x, y coordinate
+        if(rand() % 5 == 0) {
+            actors.emplace_back(std::make_shared<Sonar>(this));
+        }
+        else {
+            int x = rand() % 58;
+            int y = rand() % 58;
+            while(!canAddWater(x,y))
+            {
+                x = rand() % 58;
+                y = rand() % 58;
+            }
+            actors.emplace_back(std::make_shared<Water>(x, y, this));
+        }
     }
     
     /// add protester
@@ -152,7 +162,7 @@ public:
           : protesters.emplace_back(std::make_shared<RegProtester>(this));
       }
     }
-    else if (timeToAddProtester > 0) --timeToAddProtester;
+    else if (timeToAddProtester > 0) { --timeToAddProtester; }
     
     // THIS IS TEST
     for (auto protester : protesters) {
@@ -224,6 +234,35 @@ public:
   }
   bool isIcy(const int& x, const int& y, const int& dir) const;
   bool isBouldery(const int& x, const int& y, const int& dir) const;
+  bool isIcyOrBouldery(const int& x, const int& y, const int& dir) const;
+//  bool isBoulderOnWay(const int& manX, const int& manY, const int& protX, const int& protY, const int& dir) const {
+//    for (auto boulder : actors) {
+//      if (typeid(*boulder) == typeid(Boulder)) {
+//        switch (dir) {
+//          case <#constant#>:
+//            <#statements#>
+//            break;
+//            
+//          default:
+//            break;
+//        }
+//        return true;
+//      }
+//    }
+//    return false;
+//  }
+  bool canAddWater(const int& x, const int& y) const {
+      for (int i = 0; i < 4; i++)
+      {
+          if (ice[x+i][y]->isAlive()) return false;
+        
+          for (int j = 0; j < 4; j++)
+          {
+              if(ice[x][y+j]->isAlive()) return false;
+          }
+      }
+      return true;
+  }
 };
 
 #endif // STUDENTWORLD_H_

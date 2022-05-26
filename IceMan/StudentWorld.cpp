@@ -138,6 +138,30 @@ bool StudentWorld::isBouldery(const int& x, const int& y, const int& dir) const 
   return false;
 }
 
+bool StudentWorld::isIcyOrBouldery(const int& x, const int& y, const int& dir) const {
+  // check both ice and boulder
+  for (const auto& actor : actors) {
+    if (!actor->isAlive()) continue;
+    
+    if (typeid(Boulder) == typeid(*actor) && isInRange(x, y, actor->getX(), actor->getY(), 4.0f)) {
+      switch (dir) {
+        case Actor::up :
+          if (actor->getY() > y) { return true; }
+          break;
+        case Actor::down :
+          if (actor->getY() < y) { return true; }
+          break;
+        case Actor::right :
+          if (actor->getX() > x) { return true; }
+          break;
+        case Actor::left :
+          if (actor->getX() < x) { return true; }
+          break;
+      }
+    }
+  }
+  return false;
+}
 
 void StudentWorld::initGold() {}
 void StudentWorld::initSonar() {}
@@ -204,7 +228,7 @@ bool StudentWorld::bribeProtester(const int& goldX, const int& goldY) {
         increaseScore(25);
         protester->setState(LEAVE);
       }
-      else {
+      else { /// if it's a hardcore protester
         increaseScore(50);
         protester->setState(WAIT);
       }

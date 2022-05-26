@@ -1,6 +1,7 @@
 #include "Actor.h"
 #include "StudentWorld.h"
 #include <cmath>
+#include <queue>
 
 /*================ ICEMAN ================*/
 void Iceman::doSomething() {
@@ -71,6 +72,55 @@ void Iceman::getAnnoyed(unsigned int damage) {
   }
 }
 
+/*================ PROTESTER ================*/
+bool Protester::findNearestPath(int startX, int startY, int finalX, int finalY, Direction& dir, int& steps) const {
+  std::queue<std::pair<int, int>> xy;
+  int stepArray[64][64];
+  int currStep;
+  
+  for (int i = 0; i < 64; ++i) {
+    for (int j = 0; j < 64; ++j) {
+      stepArray[i][j] = 9999;
+    }
+  }
+  
+  stepArray[startX][startY] = 0;
+  xy.push(std::make_pair(startX, startY));
+  
+  while (!xy.empty()) {
+    int currX = xy.front().first;
+    int currY = xy.front().second;
+    xy.pop();
+    
+    if (currX == finalX && currY == finalY) return true;
+    
+    currStep = stepArray[currX][currY];
+    ++currStep;
+    
+    if (!getWorld()->isIcy(currX, currY, up) && !getWorld()->isBouldery(currX, currY, up) && stepArray[currX][currY+1] == 9999 && currY < 60) {
+      stepArray[currX][currY+1] = currStep;
+      xy.push(std::make_pair(currX, currY+1));
+    }
+    if (!getWorld()->isIcy(currX, currY, down) && !getWorld()->isBouldery(currX, currY, down) && stepArray[currX][currY-1] == 9999 && currY > 0) {
+      stepArray[currX][currY-1] = currStep;
+      xy.push(std::make_pair(currX, currY-1));
+    }
+    if (!getWorld()->isIcy(currX, currY, right) && !getWorld()->isBouldery(currX, currY, right) && stepArray[currX+1][currY] == 9999 && currX < 60) {
+      stepArray[currX+1][currY] = currStep;
+      xy.push(std::make_pair(currX+1, currY));
+    }
+    if (!getWorld()->isIcy(currX, currY, left) && !getWorld()->isBouldery(currX, currY, left) && stepArray[currX+1][currY] == 9999 && currX > 0) {
+      stepArray[currX-1][currY] = currStep;
+      xy.push(std::make_pair(currX-1, currY));
+    }
+    
+    xy.pop();
+    
+    
+  }
+  
+  return false;
+}
 
 /*================ REGULAR PROTESTER ================*/
 void RegProtester::doSomething() {
@@ -91,6 +141,7 @@ void RegProtester::doSomething() {
         int x = getWorld()->getIce_man()->getX();
         int y = getWorld()->getIce_man()->getY();
         
+        /// if iceman is close enough and protester is facing him
         if (getWorld()->isInRange(getX(), getY(), x, y, 4.0f)) {
           if (canShout) {
             switch (getDirection()) {
@@ -108,12 +159,30 @@ void RegProtester::doSomething() {
                 break;
             }
           }
-          else { // if "can't shout" state
+          else { /// if "can't shout" state
             if (non_resting_ticks == 15) {
               non_resting_ticks = 0;
               canShout = true;
             }
             else { ++non_resting_ticks; }
+          }
+        }
+        else if (getX() == x || getY() == y) { /// is in a straight horizontal or vertical line of sight to iceman
+          if (getX() == x) {
+            if (getY() - y < 0 ) {
+              setDirection(up);
+            }
+            else {
+              setDirection(down);
+            }
+          }
+          else {
+            if (getX() - x < 0 ) {
+              setDirection(right);
+            }
+            else {
+              setDirection(left);
+            }
           }
         }
         break;
@@ -180,6 +249,33 @@ void HardProtester::doSomething() {
               canShout = true;
             }
             else { ++non_resting_ticks; }
+          }
+        }
+        else if (getX() == x || getY() == y) { /// is in a straight horizontal or vertical line of sight to iceman
+          
+          if (getX() == x) {
+            if (getY() - y < 0 ) {
+//              if(isBoulderOnWay(up, x, y-getY()) == false) {
+//                setDirection(up);
+//              }
+            }
+            else {
+//              if(isBoulderOnWay(down, x, getY()-y) == false) {
+//                setDirection(down);
+//              }
+            }
+          }
+          else {
+            if (getX() - x < 0 ) {
+//              if(isBoulderOnWay(right, x-getX(), y)) {
+//                setDirection(right);
+//              }
+            }
+            else {
+//              if(isBoulderOnWay(left, getX()-x, y)) {
+//                setDirection(left);
+//              }
+            }
           }
         }
         break;

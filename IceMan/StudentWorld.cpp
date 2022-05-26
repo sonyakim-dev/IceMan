@@ -12,12 +12,12 @@ std::string StudentWorld::setPrecision(const unsigned int& val, const unsigned i
 }
 
 void StudentWorld::setDisplayText() {
-    std::string s = "Lvl: " + setPrecision(getLevel(), 2, ' ') + "  Lives: " + std::to_string(getLives()) +
-        "  Hlth: " + setPrecision(ice_man->getHP()*10, 2, ' ') + "%  Wtr: " + setPrecision(ice_man->getWater(), 2, ' ') +
-        "  Gld: " + setPrecision(ice_man->getGold(), 2, ' ') + "  Oil Left: " + setPrecision(num_oil, 2, ' ') +
-        "  Sonar: " + setPrecision(ice_man->getSonar(), 2, ' ') + "  Scr: " + setPrecision(getScore(), 6, '0');
+  std::string s = "Lvl: " + setPrecision(getLevel(), 2, ' ') + "  Lives: " + std::to_string(getLives()) +
+      "  Hlth: " + setPrecision(ice_man->getHP()*10, 2, ' ') + "%  Wtr: " + setPrecision(ice_man->getWater(), 2, ' ') +
+      "  Gld: " + setPrecision(ice_man->getGold(), 2, ' ') + "  Oil Left: " + setPrecision(num_oil, 2, ' ') +
+      "  Sonar: " + setPrecision(ice_man->getSonar(), 2, ' ') + "  Scr: " + setPrecision(getScore(), 6, '0');
 
-    setGameStatText(s);
+  setGameStatText(s);
 }
 
 
@@ -34,7 +34,7 @@ void StudentWorld::initIce() {
 
 
 void StudentWorld::digIce(const unsigned int& x, const unsigned int& y, const int& dir) {
-  /// ABOUT THIS FUNC: dig ice(set invisible and dead state) when iceman moves
+  /// dig ice(set invisible and dead state) when iceman moves
   bool isThereIce = false; /// if there's even one ice to get deleted, set true
   
   switch (dir) {
@@ -79,29 +79,33 @@ void StudentWorld::digIce(const unsigned int& x, const unsigned int& y, const in
 
 
 bool StudentWorld::isIcy(const int& x, const int& y, const int& dir) const {
-  /// check is there ice next to the given item's x, y
-  /// if the given dir is right, it will check right side ice
-  /// this func could also be used when a protester hit ice, turn around and go apposite side..
+  /// check is there ice right next to the given item's x, y
+  /// if the given dir is right, it will check 4 ice of right side
+  /// this func could also be used when a protester hit ice, turn around and go apposite side..?
   switch (dir) {
     case Actor::up :
+      if (y >= 60) return true; /// prevent ice out of range
       for (int i = 0; i < 4; ++i) {
         if (ice[x + i][y + 4]->isAlive()) { return true; }
       }
       break;
       
     case Actor::down :
+      if (y <= 0) return true; /// prevent ice out of range
       for (int i = 0; i < 4; ++i) {
         if (ice[x + i][y - 1]->isAlive()) { return true; }
       }
       break;
       
     case Actor::right :
+      if (x >= 60) return true; /// prevent ice out of range
       for (int i = 0; i < 4; ++i) {
         if (ice[x + 4][y + i]->isAlive()) { return true; }
       }
       break;
       
     case Actor::left :
+      if (x <= 0) return true; /// prevent ice out of range
       for (int i = 0; i < 4; ++i) {
         if (ice[x - 1][y + i]->isAlive()) { return true; }
       }
@@ -117,16 +121,16 @@ bool StudentWorld::isBouldery(const int& x, const int& y, const int& dir) const 
     if (typeid(Boulder) == typeid(*actor) && isInRange(x, y, actor->getX(), actor->getY(), 4.0f)) {
       switch (dir) {
         case Actor::up :
-          if (actor->getY() > y) return true;
+          if (actor->getY() > y) { return true; }
           break;
         case Actor::down :
-          if (actor->getY() < y) return true;
+          if (actor->getY() < y) { return true; }
           break;
         case Actor::right :
-          if (actor->getX() > x) return true;
+          if (actor->getX() > x) { return true; }
           break;
         case Actor::left :
-          if (actor->getX() < x) return true;
+          if (actor->getX() < x) { return true; }
           break;
       }
     }
@@ -148,31 +152,39 @@ void StudentWorld::squirtWater(const int& x, const int& y, const Actor::Directio
   playSound(SOUND_PLAYER_SQUIRT);
   ice_man->useWater();
   
-  if (x > 56) return; // prevent out of range
-  
+//  if (x < 4 || x > 56 || y < 4 || y > 60) return; /// prevent out of range
   switch (dir) {
     case Actor::up :
-      actors.emplace_back(std::make_shared<Squirt>(x, y+3, this, dir));
+      for (int i = 0; i < 4; ++i) {
+        if (isIcy(x, y+i, dir)) return; /// do not make squirt if there's no 4X4 space
+      }
+      actors.emplace_back(std::make_shared<Squirt>(x, y+4, this, dir));
       break;
+      
     case Actor::down :
-      actors.emplace_back(std::make_shared<Squirt>(x, y-3, this, dir));
+      for (int i = 0; i < 4; ++i) {
+        if (isIcy(x, y-i, dir)) return; /// do not make squirt if there's no 4X4 space
+      }
+      actors.emplace_back(std::make_shared<Squirt>(x, y-4, this, dir));
       break;
+      
     case Actor::right :
-      actors.emplace_back(std::make_shared<Squirt>(x+3, y, this, dir));
+      for (int i = 0; i < 4; ++i) {
+        if (isIcy(x+i, y, dir)) return; /// do not make squirt if there's no 4X4 space
+      }
+      actors.emplace_back(std::make_shared<Squirt>(x+4, y, this, dir));
       break;
+      
     case Actor::left :
-      actors.emplace_back(std::make_shared<Squirt>(x-3, y, this, dir));
+      for (int i = 0; i < 4; ++i) {
+        if (isIcy(x-i, y, dir)) return; /// do not make squirt if there's no 4X4 space
+      }
+      actors.emplace_back(std::make_shared<Squirt>(x-4, y, this, dir));
       break;
   }
 }
 
-void StudentWorld::bribeProtester(const int& x, const int& y) {
-  playSound(SOUND_PROTESTER_FOUND_GOLD);
-  // ADD: protestor react as bribed
-  increaseScore(25);
-}
-
-void StudentWorld::findGoodies(const int& x, const int& y) {
+void StudentWorld::discoverGoodies(const int& x, const int& y) {
   ice_man->useSonar();
   for (const auto& actor : actors) {
     if (typeid(*actor) == typeid(Gold) || typeid(*actor) == typeid(Oil)) {
@@ -182,3 +194,45 @@ void StudentWorld::findGoodies(const int& x, const int& y) {
     }
   }
 }
+
+
+bool StudentWorld::bribeProtester(const int& goldX, const int& goldY) {
+  for (const auto& protester: protesters) {
+    if (isInRange(goldX, goldY, protester->getX(), protester->getY(), 3.0f)) {
+      playSound(SOUND_PROTESTER_FOUND_GOLD);
+      if (typeid(*protester) == typeid(RegProtester)) {
+        increaseScore(25);
+        protester->setState(LEAVE);
+      }
+      else {
+        increaseScore(50);
+        protester->setState(WAIT);
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+bool StudentWorld::shootProtester(const int& waterX, const int& waterY) {
+  for (const auto& protester : protesters) {
+    if (isInRange(waterX, waterY, protester->getX(), protester->getY(), 3.0f)) {
+      // ADD
+      protester->getAnnoyed(2);
+      playSound(SOUND_PROTESTER_ANNOYED);
+      return true;
+    }
+  }
+  return false;
+}
+
+bool StudentWorld::bonkProtester(const int& boulderX, const int& boulderY) {
+  for (const auto& protester : protesters) {
+    if (isInRange(boulderX, boulderY, protester->getX(), protester->getY(), 3.0f)) {
+      // ADD
+      return true;
+    }
+  }
+  return true;
+}
+

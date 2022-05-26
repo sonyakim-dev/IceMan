@@ -53,7 +53,7 @@ void Iceman::doSomething() {
         
       case 'z' :
         if (getSonar() <= 0) return;
-        getWorld()->findGoodies(getX(), getY());
+        getWorld()->discoverGoodies(getX(), getY());
         break;
         
       case KEY_PRESS_ESCAPE :
@@ -64,28 +64,29 @@ void Iceman::doSomething() {
 }
 
 void Iceman::getAnnoyed(unsigned int damage) {
-  hit_points -= damage;
-  if (hit_points <= 0) {
+  dropHP(damage);
+  if (getHP() <= 0) {
     getWorld()->playSound(SOUND_PLAYER_ANNOYED);
     setDead();
   }
 }
 
 
-/*================ REG PROTESTER ================*/
+/*================ REGULAR PROTESTER ================*/
 void RegProtester::doSomething() {
   if (!isAlive()) return;
   
-  if (move_ticks == std::max(0, 3 - (int)getWorld()->getLevel() / 4)) {
+  if (resting_ticks == std::max(0, 3 - (int)getWorld()->getLevel() / 4)) {
     switch (getState()) {
-      case LEAVE :
+      case LEAVE : /// get annoyed and leave the oil field
         if (getX() == 60 && getY() == 60) { setDead(); return; }
         // ADD: move back to 60x60
+        moveTo(getX()+1, getY()); // THIS IS TEST
         break;
         
-      case STAY :
+      case STAY : /// walk around the oil field
         moveTo(getX()-1, getY()); // THIS IS TEST
-        move_ticks = 0;
+        resting_ticks = 0;
         
         int x = getWorld()->getIce_man()->getX();
         int y = getWorld()->getIce_man()->getY();
@@ -118,12 +119,12 @@ void RegProtester::doSomething() {
         break;
     }
   }
-  else { ++move_ticks; }
+  else { ++resting_ticks; }
 }
 
 void RegProtester::getAnnoyed(unsigned int damage) {
-  hit_points -= damage;
-  if (hit_points <= 0) {
+  dropHP(damage);
+  if (getHP() <= 0) {
     getWorld()->playSound(SOUND_PROTESTER_GIVE_UP);
     setState(LEAVE);
   }
@@ -133,16 +134,25 @@ void RegProtester::getAnnoyed(unsigned int damage) {
 void HardProtester::doSomething() {
   if (!isAlive()) return;
   
-  if (move_ticks == std::max(0, 3 - (int)getWorld()->getLevel() / 4)) {
+  if (resting_ticks == std::max(0, 3 - (int)getWorld()->getLevel() / 4)) {
     switch (getState()) {
-      case LEAVE :
+      case WAIT: /// when bribed by gold
+        if (stare_gold_ticks == std::max(50, 100 - (int)getWorld()->getLevel() * 10)) {
+          setState(STAY);
+        }
+        else {
+          ++stare_gold_ticks;
+        }
+        break;
+        
+      case LEAVE : /// get annoyed and leave the oil field
         if (getX() == 60 && getY() == 60) { setDead(); return; }
         // ADD: move back to 60x60
         break;
         
-      case STAY :
+      case STAY : /// walk around the oil field
         moveTo(getX()-1, getY()); // THIS IS TEST
-        move_ticks = 0;
+        resting_ticks = 0;
         
         int x = getWorld()->getIce_man()->getX();
         int y = getWorld()->getIce_man()->getY();
@@ -175,12 +185,12 @@ void HardProtester::doSomething() {
         break;
     }
   }
-  else { ++move_ticks; }
+  else { ++resting_ticks; }
 }
 
 void HardProtester::getAnnoyed(unsigned int damage) {
-  hit_points -= damage;
-  if (hit_points <= 0) {
+  dropHP(damage);
+  if (getHP() <= 0) {
     getWorld()->playSound(SOUND_PROTESTER_GIVE_UP);
     setState(LEAVE);
   }
@@ -212,19 +222,13 @@ void Gold::doSomething() {
 
   switch (getState()) {
     case TEMP : /// TEMP means gold is pickable by protestor and it will be deleted after few ticks
-      if (getWorld()->isInRange(/*FIX:protester's x*/10, /*FIX:protester's y*/10, getX(), getY(), 3.0f)) {
-        getWorld()->bribeProtester(10, 10);
+      if (getWorld()->bribeProtester(getX(), getY())) {
         setDead();
         return;
       }
       else {
-        if (life_time == 100) {
-          setDead();
-          life_time = 0;
-        }
-        else {
-          ++life_time;
-        }
+        if (life_time == 100) { setDead(); return; }
+        else { ++life_time; }
       }
       break;
       
@@ -256,9 +260,7 @@ void Sonar::doSomething() {
   if (life_time == std::max(100, 300 - 10 * (int)getWorld()->getLevel())) { // need improvement
     setDead();
   }
-  else {
-    ++life_time;
-  }
+  else { ++life_time; }
 }
 
 /*================ WATER ================*/
@@ -274,9 +276,7 @@ void Water::doSomething() {
   if (life_time == std::max(100, 300 - 10 * (int)getWorld()->getLevel())) { // need improvement
     setDead();
   }
-  else {
-    ++life_time;
-  }
+  else { ++life_time; }
 }
 
 /*================ BOULDER ================*/
@@ -295,28 +295,26 @@ void Boulder::doSomething() {
         setState(FALL);
         getWorld()->playSound(SOUND_FALLING_ROCK);
       }
-      else {
-        ++time_wait;
-      }
+      else { ++time_wait; }
       break;
       
     case FALL :
           /// 1) when it hit the ground OR
       if (getY() <= 0 ||
           /// 2) when it hit another boulder OR
-          getWorld()->isBouldery(getX(), getY(), down) || //?
+          getWorld()->isBouldery(getX(), getY(), down) ||
           /// 3) when it hit the ice
-          getWorld()->isIcy(getX(), getY(), down) )
-      { setDead(); }
+          getWorld()->isIcy(getX(), getY(), down))
+      { setDead(); return; }
       
       /// when it hit the iceman
-      if (getWorld()->isInRange(getX(), getY(), getWorld()->getIce_man()->getX(), getWorld()->getIce_man()->getY(), 3.0f)){
+      if (getWorld()->isInRange(getX(), getY(), getWorld()->getIce_man()->getX(), getWorld()->getIce_man()->getY(), 3.0f)) {
         getWorld()->getIce_man()->getAnnoyed(100);
       }
       /// when it hit the protester
-//      if (within range 3.0) {
-//
-//      }
+      if (getWorld()->bonkProtester(getX(), getY())) {
+        // ADD
+      }
       
       moveTo(getX(), getY()-1);
       break;
@@ -327,31 +325,33 @@ void Boulder::doSomething() {
 void Squirt::doSomething() {
   if (!isAlive()) return;
   
-  // ADD: protester is within 3.0, make annoyed
-  
-  /// when it hit the ice or boulder set it dead
-  if (getWorld()->isIcy(getX(), getY(), getDirection()) ||
-      getWorld()->isBouldery(getX(), getY(), getDirection())) {
-    setDead();
-    return;
-  }
+  if (getWorld()->shootProtester(getX(), getY())) { setDead(); return; }
   
   if (life_time > 4) { setDead(); return; }
   else ++life_time;
   
-  switch (getDirection()) {
-    case Actor::up :
-      moveTo(getX(), getY()+1);
-      break;
-    case Actor::down :
-      moveTo(getX(), getY()-1);
-      break;
-    case Actor::right :
-      moveTo(getX()+1, getY());
-      break;
-    case Actor::left :
-      moveTo(getX()-1, getY());
-      break;
+  /// when it hit the ice or boulder set it dead
+  if (getWorld()->isIcy(getX(), getY(), getDirection()) ||
+      getWorld()->isBouldery(getX(), getY(), getDirection()))
+  {
+    setDead();
+    return;
+  }
+  else {
+    switch (getDirection()) {
+      case Actor::up :
+        moveTo(getX(), getY()+1);
+        break;
+      case Actor::down :
+        moveTo(getX(), getY()-1);
+        break;
+      case Actor::right :
+        moveTo(getX()+1, getY());
+        break;
+      case Actor::left :
+        moveTo(getX()-1, getY());
+        break;
+    }
   }
 }
 

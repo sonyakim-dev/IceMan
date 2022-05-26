@@ -8,20 +8,20 @@ enum State { TEMP, PERM, WAIT, FALL, STABLE, STAY, LEAVE };
 
 
 class Actor : public GraphObject {
+private:
+  bool active = true;
+  State state;
+  StudentWorld* stud_world;
 public:
   Actor(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
     : GraphObject(imageID, startX, startY, dir, size, depth), stud_world(stud_world) {}
   virtual ~Actor() {}
   virtual void doSomething() = 0;
-  virtual StudentWorld* getWorld() const { return stud_world; }
-  bool isAlive() const { return active; }
-  void setDead() { active = false; setVisible(false); }
-  int getState() const { return state; }
-  void setState(State condition) { state = condition; }
-private:
-  bool active = true;
-  State state;
-  StudentWorld* stud_world;
+  virtual StudentWorld* getWorld() const final { return stud_world; }
+  virtual bool isAlive() const final { return active; }
+  virtual void setDead() final { active = false; setVisible(false); }
+  virtual int getState() const final { return state; }
+  virtual void setState(State condition) final { state = condition; }
 };
 
 
@@ -37,15 +37,18 @@ public:
 
 /*================ CHARACTER ================*/
 class Character : public Actor {
-protected:
+private:
   int hit_points;
+protected:
+  virtual void setHP(unsigned int hp) final { hit_points = hp; }
+  virtual void dropHP(unsigned int damage) final { hit_points -= damage; }
 public:
   Character(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
     : Actor(imageID, startX, startY, stud_world, dir, size, depth) {}
   virtual ~Character() {}
   virtual void doSomething() override = 0;
   virtual void getAnnoyed(unsigned int damage) = 0; /// both iceman and protester get annoyed
-  virtual int getHP() const { return hit_points; }
+  virtual int getHP() const final { return hit_points; }
 };
 
 class Iceman : public Character {
@@ -55,7 +58,7 @@ private:
   unsigned int i_sonars {1};
 public:
   Iceman(StudentWorld* stud_world)
-    : Character(IID_PLAYER, 30, 60, stud_world, right, 1.0, 0) { setVisible(true); hit_points = 10; }
+    : Character(IID_PLAYER, 30, 60, stud_world, right, 1.0, 0) { setVisible(true); setHP(10); }
   virtual ~Iceman() {}
   virtual void doSomething() override;
   virtual void getAnnoyed(unsigned int damage) override;
@@ -73,7 +76,7 @@ public:
 class Protester : public Character {
 protected:
   int move_straight_distance; /// numSquresToMoveInCurrentDirection
-  int move_ticks {0};
+  int resting_ticks {0};
   int non_resting_ticks {0};
   bool canShout = true;
 public:
@@ -87,7 +90,7 @@ public:
 class RegProtester : public Protester {
 public:
   RegProtester(StudentWorld* stud_world)
-  : Protester(IID_PROTESTER, stud_world) { setVisible(true); hit_points = 5; setState(STAY); move_straight_distance = rand() % 53 + 8; }
+    : Protester(IID_PROTESTER, stud_world) { setVisible(true); setHP(5); setState(STAY); move_straight_distance = rand() % 53 + 8;/*not sure about this*/ }
   virtual ~RegProtester() {}
   virtual void doSomething() override;
   virtual void getAnnoyed(unsigned int damage) override;
@@ -96,10 +99,12 @@ public:
 class HardProtester : public Protester {
 public:
   HardProtester(StudentWorld* stud_world)
-    : Protester(IID_HARD_CORE_PROTESTER, stud_world) { setVisible(true); hit_points = 20; setState(STAY); }
+    : Protester(IID_HARD_CORE_PROTESTER, stud_world) { setVisible(true); setHP(20); setState(STAY); }
   virtual ~HardProtester() {}
   virtual void doSomething() override;
   virtual void getAnnoyed(unsigned int damage) override;
+private:
+  int stare_gold_ticks {0};
 };
 
 
@@ -107,7 +112,7 @@ public:
 class Goodies : public Actor {
 public:
     Goodies(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
-        : Actor(imageID, startX, startY, stud_world, dir, size, depth) {}
+      : Actor(imageID, startX, startY, stud_world, dir, size, depth) {}
     virtual ~Goodies() {}
     virtual void doSomething() override = 0;
 };
@@ -123,7 +128,7 @@ public:
 class Gold : public Goodies {
 public:
     Gold(int startX, int startY, StudentWorld* stud_world, State condition = PERM)
-  : Goodies(IID_GOLD, startX, startY, stud_world, right, 1, 2) { setState(condition); (condition == TEMP) ? setVisible(true) : setVisible(false);}
+      : Goodies(IID_GOLD, startX, startY, stud_world, right, 1, 2) { setState(condition); (condition == TEMP) ? setVisible(true) : setVisible(false);}
     virtual ~Gold() {}
     virtual void doSomething() override;
 private:
@@ -143,7 +148,7 @@ private:
 class Water : public Goodies {
 public:
     Water(int startX, int startY, StudentWorld* stud_world)
-  : Goodies(IID_WATER_POOL, startX, startY, stud_world, right, 1, 2) { setVisible(true); setState(TEMP); }
+      : Goodies(IID_WATER_POOL, startX, startY, stud_world, right, 1, 2) { setVisible(true); setState(TEMP); }
     virtual ~Water() {}
     virtual void doSomething() override;
 private:
@@ -154,10 +159,10 @@ private:
 /*================ ATTACK ================*/
 class Attack : public Actor {
 public:
-    Attack(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
-      : Actor(imageID, startX, startY, stud_world, dir, size, depth){}
-    virtual ~Attack() {}
-    virtual void doSomething() override = 0;
+  Attack(int imageID, int startX, int startY, StudentWorld* stud_world, Direction dir = right, double size = 1.0, unsigned int depth = 0)
+    : Actor(imageID, startX, startY, stud_world, dir, size, depth){}
+  virtual ~Attack() {}
+  virtual void doSomething() override = 0;
 };
 
 class Boulder : public Attack {
@@ -172,9 +177,9 @@ private:
 
 class Squirt : public Attack {
 public:
-    Squirt(int startX, int startY, StudentWorld* stud_world, Direction dir = right)
-      : Attack(IID_WATER_SPURT, startX, startY, stud_world, dir, 1, 1) { setVisible(true); }
-    virtual ~Squirt() {}
+  Squirt(int startX, int startY, StudentWorld* stud_world, Direction dir = right)
+    : Attack(IID_WATER_SPURT, startX, startY, stud_world, dir, 1, 1) { setVisible(true); }
+  virtual ~Squirt() {}
   virtual void doSomething() override;
 private:
   unsigned int life_time{0};

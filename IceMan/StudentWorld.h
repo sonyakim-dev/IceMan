@@ -197,7 +197,8 @@ public:
       }
     }
     
-    actors.clear(); /// clear actors vector
+    actors.clear(); /// clear vector
+    protesters.clear();
 	}
   
   std::shared_ptr<Iceman> getIce_man() const { return ice_man; }
@@ -221,7 +222,9 @@ public:
   bool bribeProtester(const int& goldX, const int& goldY);
   bool shootProtester(const int& waterX, const int& waterY);
   bool bonkProtester(const int& boulderX, const int& boulderY);
+  
   void shoutAtIceman() { playSound(SOUND_PROTESTER_YELL); ice_man->getAnnoyed(2); }
+  bool canSeeIceman(const int& protX, const int& protY, const int& manX, const int& manY, Actor::Direction& dir) const;
   
   bool isInRange(const int& x1, const int& y1, const int& x2, const int& y2, const float& radius) const {
     return (sqrt(pow(x1-x2, 2) + pow(y1-y2, 2)) <= radius) ? true : false;
@@ -234,34 +237,7 @@ public:
   }
   bool isIcy(const int& x, const int& y, const int& dir) const;
   bool isBouldery(const int& x, const int& y, const int& dir) const;
-//  bool isBoulderOnWay(const int& manX, const int& manY, const int& protX, const int& protY, const int& dir) const {
-//    for (auto boulder : actors) {
-//      if (typeid(*boulder) == typeid(Boulder)) {
-//        switch (dir) {
-//          case <#constant#>:
-//            <#statements#>
-//            break;
-//            
-//          default:
-//            break;
-//        }
-//        return true;
-//      }
-//    }
-//    return false;
-//  }
-  bool canAddWater(const int& x, const int& y) const {
-      for (int i = 0; i < 4; i++)
-      {
-          if (ice[x+i][y]->isAlive()) return false;
-        
-          for (int j = 0; j < 4; j++)
-          {
-              if(ice[x+i][y+j]->isAlive()) return false;
-          }
-      }
-      return true;
-  }
+  bool canAddWater(const int& x, const int& y) const;
 };
 
 #endif // STUDENTWORLD_H_

@@ -81,7 +81,6 @@ void StudentWorld::digIce(const unsigned int& x, const unsigned int& y, const in
 bool StudentWorld::isIcy(const int& x, const int& y, const int& dir) const {
   /// check is there ice right next to the given item's x, y
   /// if the given dir is right, it will check 4 ice of right side
-  /// this func could also be used when a protester hit ice, turn around and go apposite side..?
   switch (dir) {
     case Actor::up :
       if (y >= 60) return true; /// prevent ice out of range
@@ -136,6 +135,20 @@ bool StudentWorld::isBouldery(const int& x, const int& y, const int& dir) const 
     }
   }
   return false;
+}
+
+bool StudentWorld::canAddWater(const int& x, const int& y) const {
+  // FIX: water lay on the top of another
+    for (int i = 0; i < 4; i++)
+    {
+        if (ice[x+i][y]->isAlive()) return false;
+      
+        for (int j = 0; j < 4; j++)
+        {
+            if(ice[x+i][y+j]->isAlive()) return false;
+        }
+    }
+    return true;
 }
 
 void StudentWorld::initGold() {}
@@ -227,7 +240,6 @@ bool StudentWorld::shootProtester(const int& waterX, const int& waterY) {
 bool StudentWorld::bonkProtester(const int& boulderX, const int& boulderY) {
   for (const auto& protester : protesters) {
     if (isInRange(boulderX, boulderY, protester->getX(), protester->getY(), 3.0f)) {
-      // ADD
       protester->getAnnoyed(100);
       increaseScore(500);
       return true;
@@ -236,3 +248,46 @@ bool StudentWorld::bonkProtester(const int& boulderX, const int& boulderY) {
   return false;
 }
 
+bool StudentWorld::canSeeIceman(const int& protX, const int& protY, const int& manX, const int& manY, Actor::Direction& dir) const {
+  int n = 0; /// distance between iceman and protester
+  
+  if (protX == manX) {
+    n = protY - manY;
+    if (n < -4) { dir = Actor::up; } /// if protester is below the iceman
+    else if (n > 4) { dir = Actor::down; } /// if protester is above the iceman
+    else return false;
+  }
+  else if (protY == manY) {
+    n = protX - manX;
+    if (n < -4) { dir = Actor::right; } /// if protester is on the left side of the iceman
+    else if (n > 4) { dir = Actor::left; } /// if protester is on the right side of the iceman
+    else return false;
+  }
+  
+  switch (dir) {
+    case Actor::up : /// if protester is below the iceman
+      for (int i = 0; i < n; ++i) {
+        if (isIcy(protX, protY+i, dir) || isBouldery(protX, protY+i, dir)) return false;
+      }
+      break;
+      
+    case Actor::down :
+      for (int i = 0; i < n; ++i) {
+        if (isIcy(protX, protY-i, dir) || isBouldery(protX, protY-i, dir)) return false;
+      }
+      break;
+      
+    case Actor::right :
+      for (int i = 0; i < n; ++i) {
+        if (isIcy(protX+i, protY, dir) || isBouldery(protX+i, protY, dir)) return false;
+      }
+      break;
+      
+    case Actor::left :
+      for (int i = 0; i < n; ++i) {
+        if (isIcy(protX-i, protY, dir) || isBouldery(protX-i, protY, dir)) return false;
+      }
+      break;
+  }
+  return true;
+}

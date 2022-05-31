@@ -5,7 +5,7 @@ GameWorld* createStudentWorld(std::string assetDir)
 	return new StudentWorld(assetDir);
 }
 
-std::string StudentWorld::setPrecision(const unsigned int& val, const unsigned int&& precision, const char&& placeholder) const {
+std::string StudentWorld::setPrecision(const unsigned int& val, const unsigned int& precision, const char&& placeholder) const {
   int digit = (val < 10) ? 1 : int(log10(val) + 1); /// prevent log10(0) error
   if (digit > precision) return std::to_string(val); /// if val is longer than the given precision, just print val
   else return std::string(precision - digit, placeholder).append(std::to_string(val));
@@ -33,43 +33,43 @@ void StudentWorld::initIce() {
 }
 
 
-void StudentWorld::digIce(const unsigned int& x, const unsigned int& y, const int& dir) {
+void StudentWorld::digIce(const int& x, const int& y, const int& dir) {
   /// dig ice(set invisible and dead state) when iceman moves
   bool isThereIce = false; /// if there's even one ice to get deleted, set true
   
   switch (dir) {
     case KEY_PRESS_UP :
       for (int i = 0; i < 4; ++i) {
-        if (ice[x + i][y + 3]->isAlive()) {
+        if (ice[x + i][y + 4]->isAlive()) {
           isThereIce = true;
-          ice[x + i][y + 3]->setDead();
+          ice[x + i][y + 4]->setDead();
         }
       }
       break;
     
     case KEY_PRESS_DOWN :
       for (int i = 0; i < 4; ++i) {
-        if (ice[x + i][y]->isAlive()) {
+        if (ice[x + i][y - 1]->isAlive()) {
           isThereIce = true;
-          ice[x + i][y]->setDead();
+          ice[x + i][y - 1]->setDead();
         }
       }
       break;
       
     case KEY_PRESS_RIGHT :
       for (int i = 0; i < 4; ++i) {
-        if (ice[x + 3][y + i]->isAlive()) {
+        if (ice[x + 4][y + i]->isAlive()) {
           isThereIce = true;
-          ice[x + 3][y + i]->setDead();
+          ice[x + 4][y + i]->setDead();
         }
       }
       break;
       
     case KEY_PRESS_LEFT :
       for (int i = 0; i < 4; ++i) {
-        if (ice[x][y + i]->isAlive()) {
+        if (ice[x - 1][y + i]->isAlive()) {
           isThereIce = true;
-          ice[x][y + i]->setDead();
+          ice[x - 1][y + i]->setDead();
         }
       }
       break;
@@ -164,7 +164,7 @@ void StudentWorld::squirtWater(const int& x, const int& y, const Actor::Directio
   playSound(SOUND_PLAYER_SQUIRT);
   ice_man->useWater();
   
-//  if (x < 4 || x > 56 || y < 4 || y > 60) return; /// prevent out of range
+//  if (x < 4 || x > 56 || y < 4 || y > 60) return; /// prevent out of range->alreay checked inside isIcy func
   switch (dir) {
     case Actor::up :
       for (int i = 0; i < 4; ++i) {
@@ -210,7 +210,7 @@ void StudentWorld::discoverGoodies(const int& x, const int& y) {
 
 bool StudentWorld::bribeProtester(const int& goldX, const int& goldY) {
   for (const auto& protester: protesters) {
-    if (isInRange(goldX, goldY, protester->getX(), protester->getY(), 3.0f)) {
+    if (isInRange(goldX, goldY, protester->getX(), protester->getY(), 3.0f) && protester->getState() == STAY) {
       playSound(SOUND_PROTESTER_FOUND_GOLD);
       if (typeid(*protester) == typeid(RegProtester)) {
         increaseScore(25);
@@ -228,7 +228,7 @@ bool StudentWorld::bribeProtester(const int& goldX, const int& goldY) {
 
 bool StudentWorld::shootProtester(const int& waterX, const int& waterY) {
   for (const auto& protester : protesters) {
-    if (isInRange(waterX, waterY, protester->getX(), protester->getY(), 3.0f)) {
+    if (isInRange(waterX, waterY, protester->getX(), protester->getY(), 3.0f) && protester->getState() == STAY) {
       protester->setState(WAIT); /// protester get stalled for a certain tick
       protester->getAnnoyed(2);
       return true;
@@ -239,7 +239,7 @@ bool StudentWorld::shootProtester(const int& waterX, const int& waterY) {
 
 bool StudentWorld::bonkProtester(const int& boulderX, const int& boulderY) {
   for (const auto& protester : protesters) {
-    if (isInRange(boulderX, boulderY, protester->getX(), protester->getY(), 3.0f)) {
+    if (isInRange(boulderX, boulderY, protester->getX(), protester->getY(), 3.0f) && protester->getState() == STAY) {
       protester->getAnnoyed(100);
       increaseScore(500);
       return true;
@@ -249,45 +249,48 @@ bool StudentWorld::bonkProtester(const int& boulderX, const int& boulderY) {
 }
 
 bool StudentWorld::canSeeIceman(const int& protX, const int& protY, const int& manX, const int& manY, Actor::Direction& dir) const {
-  int n = 0; /// distance between iceman and protester
+  int distance = 0; /// distance between iceman and protester
+  Actor::Direction direction = Actor::none;
   
   if (protX == manX) {
-    n = protY - manY;
-    if (n < -4) { dir = Actor::up; } /// if protester is below the iceman
-    else if (n > 4) { dir = Actor::down; } /// if protester is above the iceman
-    else return false;
+    distance = protY - manY;
+    if (distance < 0) { direction = Actor::up; } /// if protester is below the iceman
+    else if (distance > 0) { direction = Actor::down; } /// if protester is above the iceman
+    else { return false; } /// when they are overlapped (n==0), no need to change dir
   }
   else if (protY == manY) {
-    n = protX - manX;
-    if (n < -4) { dir = Actor::right; } /// if protester is on the left side of the iceman
-    else if (n > 4) { dir = Actor::left; } /// if protester is on the right side of the iceman
-    else return false;
+    distance = protX - manX;
+    if (distance < 0) { direction = Actor::right; } /// if protester is on the left side of the iceman
+    else if (distance > 0) { direction = Actor::left; } /// if protester is on the right side of the iceman
+    else { return false; } /// when they are overlapped (n==0), no need to change dir
   }
+  else { return false; }
   
-  switch (dir) {
+  switch (direction) {
     case Actor::up : /// if protester is below the iceman
-      for (int i = 0; i < n; ++i) {
-        if (isIcy(protX, protY+i, dir) || isBouldery(protX, protY+i, dir)) return false;
+      for (int i = 0; i < abs(distance); ++i) {
+        if (isIcy(protX, protY+i, Actor::up) || isBouldery(protX, protY+i, Actor::up)) return false;
       }
       break;
       
     case Actor::down :
-      for (int i = 0; i < n; ++i) {
-        if (isIcy(protX, protY-i, dir) || isBouldery(protX, protY-i, dir)) return false;
+      for (int i = 0; i < abs(distance); ++i) {
+        if (isIcy(protX, protY-i, Actor::down) || isBouldery(protX, protY-i, Actor::down)) return false;
       }
       break;
       
     case Actor::right :
-      for (int i = 0; i < n; ++i) {
-        if (isIcy(protX+i, protY, dir) || isBouldery(protX+i, protY, dir)) return false;
+      for (int i = 0; i < abs(distance); ++i) {
+        if (isIcy(protX+i, protY, Actor::right) || isBouldery(protX+i, protY, Actor::right)) return false;
       }
       break;
       
     case Actor::left :
-      for (int i = 0; i < n; ++i) {
-        if (isIcy(protX-i, protY, dir) || isBouldery(protX-i, protY, dir)) return false;
+      for (int i = 0; i < abs(distance); ++i) {
+        if (isIcy(protX-i, protY, Actor::left) || isBouldery(protX-i, protY, Actor::left)) return false;
       }
       break;
   }
+  dir = direction;
   return true;
 }

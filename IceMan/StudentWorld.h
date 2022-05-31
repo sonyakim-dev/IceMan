@@ -43,7 +43,6 @@ public:
     /// initialize score board
     setDisplayText();
     
-    
     /// number of items to be created
     int L = num_oil = std::min(2 + (int)getLevel(), 21); /// oil
     int B = std::min((int)getLevel() / 2 + 2, 9); /// boulder
@@ -202,7 +201,7 @@ public:
 	}
   
   std::shared_ptr<Iceman> getIce_man() const { return ice_man; }
-  std::string setPrecision(const unsigned int& val, const unsigned int&& precision, const char&& placeholder) const;
+  std::string setPrecision(const unsigned int& val, const unsigned int& precision, const char&& placeholder) const;
   void setDisplayText();
   void initIce();
   void initGold();
@@ -214,7 +213,7 @@ public:
   void foundSonar() { playSound(SOUND_GOT_GOODIE); increaseScore(75); ice_man->addSonar(); }
   void foundWater() { playSound(SOUND_GOT_GOODIE); increaseScore(100); ice_man->addWater(); }
   
-  void digIce(const unsigned int& manX, const unsigned int& manY, const int& dir);
+  void digIce(const int& manX, const int& manY, const int& dir);
   void discoverGoodies(const int& manX, const int& manY); /// using sonar
   void dropGold(const int& manX, const int& manY); /// using gold
   void squirtWater(const int& manX, const int& manY, const Actor::Direction& dir); /// using water
@@ -238,6 +237,27 @@ public:
   bool isIcy(const int& x, const int& y, const int& dir) const;
   bool isBouldery(const int& x, const int& y, const int& dir) const;
   bool canAddWater(const int& x, const int& y) const;
+  
+  bool isAtJunction(const int& x, const int& y, const Actor::Direction& dir) const {
+    switch (dir) {
+      case Actor::up :
+      case Actor::down :
+        if ((!isIcy(x, y, Actor::right) && !isBouldery(x, y, Actor::right)) ||
+            (!isIcy(x, y, Actor::left) && !isBouldery(x, y, Actor::left))) {
+          return true;
+        }
+        break;
+        
+      case Actor::right :
+      case Actor::left :
+        if ((!isIcy(x, y, Actor::up) && !isBouldery(x, y, Actor::up)) ||
+            (!isIcy(x, y, Actor::down) && !isBouldery(x, y, Actor::down))) {
+          return true;
+        }
+        break;
+    }
+    return false;
+  }
 };
 
 #endif // STUDENTWORLD_H_

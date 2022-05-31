@@ -12,32 +12,52 @@ void Iceman::doSomething() {
     switch (ch) {
       case KEY_PRESS_UP :
         if (getDirection() == up) {
-          moveTo(getX(), (getY() == 60 || getWorld()->isBouldery(getX(), getY(), up)) ? getY() : getY() + 1);
-          getWorld()->digIce(getX(), getY(), KEY_PRESS_UP);
+          if (getY() >= 60 || getWorld()->isBouldery(getX(), getY(), up)) {
+            moveTo(getX(), getY());
+          }
+          else {
+            getWorld()->digIce(getX(), getY(), KEY_PRESS_UP);
+            moveTo(getX(), getY() + 1);
+          }
         }
         else { setDirection(up); }
         break;
         
       case KEY_PRESS_DOWN :
         if (getDirection() == down) {
-          moveTo(getX(), (getY() == 0 || getWorld()->isBouldery(getX(), getY(), down)) ? getY() : getY() - 1);
-          getWorld()->digIce(getX(), getY(), KEY_PRESS_DOWN);
+          if (getY() <= 0 || getWorld()->isBouldery(getX(), getY(), down)) {
+            moveTo(getX(), getY());
+          }
+          else {
+            getWorld()->digIce(getX(), getY(), KEY_PRESS_DOWN);
+            moveTo(getX(), getY() - 1);
+          }
         }
         else { setDirection(down); }
         break;
         
       case KEY_PRESS_RIGHT :
         if (getDirection() == right) {
-          moveTo((getX() == 60 || getWorld()->isBouldery(getX(), getY(), right)) ? getX() : getX() + 1, getY());
-          getWorld()->digIce(getX(), getY(), KEY_PRESS_RIGHT);
+          if (getX() >= 60 || getWorld()->isBouldery(getX(), getY(), right)) {
+            moveTo(getX(), getY());
+          }
+          else {
+            getWorld()->digIce(getX(), getY(), KEY_PRESS_RIGHT);
+            moveTo(getX() + 1, getY());
+          }
         }
         else { setDirection(right); }
         break;
         
       case KEY_PRESS_LEFT :
         if (getDirection() == left) {
-          moveTo((getX() == 0 || getWorld()->isBouldery(getX(), getY(), left)) ? getX() : getX() - 1, getY());
-          getWorld()->digIce(getX(), getY(), KEY_PRESS_LEFT);
+          if (getX() <= 0 || getWorld()->isBouldery(getX(), getY(), left)) {
+            moveTo(getX(), getY());
+          }
+          else {
+            getWorld()->digIce(getX(), getY(), KEY_PRESS_LEFT);
+            moveTo(getX() - 1, getY());
+          }
         }
         else { setDirection(left); }
         break;
@@ -74,10 +94,11 @@ void Iceman::getAnnoyed(unsigned int damage) {
 
 
 /*================ PROTESTER ================*/
-bool Protester::findShortestPath(int startX, int startY, int finalX, int finalY) const {
+bool Protester::findShortestPath(int startX, int startY, int finalX, int finalY, Direction& dir, int& steps) const {
   std::queue<std::pair<int, int>> xy;
   int stepArray[64][64];
   int currStep, currX, currY;
+    bool check = false;
   
   for (int i = 0; i < 64; ++i) {
     for (int j = 0; j < 64; ++j) {
@@ -93,30 +114,30 @@ bool Protester::findShortestPath(int startX, int startY, int finalX, int finalY)
     currY = xy.front().second;
     xy.pop();
     
-    if (currX == finalX && currY == finalY) return true;
+    if (currX == finalX && currY == finalY) {check = true;}
     
     currStep = stepArray[currX][currY];
     ++currStep;
     
-    if (!getWorld()->isIcy(currX, currY, up) && !getWorld()->isBouldery(currX, currY, up) &&
+    if (currY < 60 && !getWorld()->isIcy(currX, currY, up) && !getWorld()->isBouldery(currX, currY, up) &&
         stepArray[currX][currY+1] == 9999)
     {
       stepArray[currX][currY+1] = currStep;
       xy.push(std::make_pair(currX, currY+1));
     }
-    if (!getWorld()->isIcy(currX, currY, down) && !getWorld()->isBouldery(currX, currY, down) &&
+    if (currY > 0 && !getWorld()->isIcy(currX, currY, down) && !getWorld()->isBouldery(currX, currY, down) &&
         stepArray[currX][currY-1] == 9999)
     {
       stepArray[currX][currY-1] = currStep;
       xy.push(std::make_pair(currX, currY-1));
     }
-    if (!getWorld()->isIcy(currX, currY, right) && !getWorld()->isBouldery(currX, currY, right) &&
+    if (currX < 60 && !getWorld()->isIcy(currX, currY, right) && !getWorld()->isBouldery(currX, currY, right) &&
         stepArray[currX+1][currY] == 9999)
     {
       stepArray[currX+1][currY] = currStep;
       xy.push(std::make_pair(currX+1, currY));
     }
-    if (!getWorld()->isIcy(currX, currY, left) && !getWorld()->isBouldery(currX, currY, left) &&
+    if (currX > 1 && !getWorld()->isIcy(currX, currY, left) && !getWorld()->isBouldery(currX, currY, left) &&
         stepArray[currX+1][currY] == 9999)
     {
       stepArray[currX-1][currY] = currStep;
@@ -124,7 +145,50 @@ bool Protester::findShortestPath(int startX, int startY, int finalX, int finalY)
     }
   }
   
-  return false;
+    int minimum;
+    
+    if(finalX == 0 && finalY == 0)
+    {
+        minimum = std::min(stepArray[finalX+1][finalY], stepArray[finalX][finalY+1]);
+        if(minimum == stepArray[finalX+1][finalY])
+            dir = right;
+        else
+            dir = up;
+    }
+    else if (finalX == 0)
+    {
+        minimum = std::min(stepArray[finalX+1][finalY],std::min(stepArray[finalX][finalY+1], stepArray[finalX][finalY-1]));
+        if(minimum == stepArray[finalX+1][finalY])
+            dir = right;
+        else if(minimum == stepArray[finalX][finalY + 1])
+            dir = up;
+        else
+            dir = down;
+    }
+    else if (finalY == 0)
+    {
+        minimum = std::min(stepArray[finalX][finalY + 1], std::min(stepArray[finalX - 1][finalY], stepArray[finalX + 1][finalY]));
+        if(minimum == stepArray[finalX+1][finalY])
+            dir = right;
+        else if(minimum == stepArray[finalX][finalY + 1])
+            dir = up;
+        else
+            dir = left;
+    }
+    else
+    {
+        minimum = std::min(std::min(stepArray[finalX][finalY + 1], stepArray[finalX][finalY-1]), std::min(stepArray[finalX - 1][finalY], stepArray[finalX + 1][finalY]));
+        if(minimum == stepArray[finalX+1][finalY])
+            dir = right;
+        else if(minimum == stepArray[finalX][finalY + 1])
+            dir = up;
+        else if(minimum == stepArray[finalX-1][finalY])
+            dir = left;
+        else
+            dir = down;
+    }
+    steps = minimum;
+    return check;
 }
 
 void Protester::getAnnoyed(unsigned int damage) {
@@ -139,23 +203,33 @@ void Protester::getAnnoyed(unsigned int damage) {
   }
 }
 
+bool Protester::canMove() {
+  if (can_move || resting_ticks == 0) {
+    can_move = false;
+    return true;
+  }
+  else { return false; }
+}
+void Protester::setRestingTicks() { resting_ticks = std::max(0, 3 - (int)getWorld()->getLevel() / 4); }
+void Protester::setStalledTicks() { stalled_ticks = std::max(50, 100 - (int)getWorld()->getLevel() * 10); }
+
 /*================ REGULAR PROTESTER ================*/
 void RegProtester::doSomething() {
   if (!isAlive()) return;
   
-  if (resting_ticks == std::max(0, 3 - (int)getWorld()->getLevel() / 4)) { /// when it's time to move
+  if (canMove()) { /// when resting tick finished counting OR if it's the very first tick the protester being created
     switch (getState()) {
       case WAIT : /// when shot by water
-        if (stalled_ticks == std::max(50, 100 - (int)getWorld()->getLevel() * 10)) {
+        if (canGoOn()) { /// when finished being stalled
           setState(STAY);
         }
         else {
-          ++stalled_ticks;
+          countStalledTicks();
         }
         break;
         
       case LEAVE : /// fully get annoyed and leave the oil field
-        resting_ticks = 0;
+        setRestingTicks(); /// reset resting tick
         
         if (getX() == 60 && getY() == 60) { setDead(); return; }
         // ADD: findShortestPath(getX(), getY(), 60, 60)
@@ -163,7 +237,9 @@ void RegProtester::doSomething() {
         break;
         
       case STAY : /// non-leave-the-oil-field state
-        resting_ticks = 0;
+        setRestingTicks();
+        ++non_resting_ticks;
+        if (non_resting_ticks == 5000) non_resting_ticks = 0;
         
         int icemanX = getWorld()->getIce_man()->getX();
         int icemanY = getWorld()->getIce_man()->getY();
@@ -172,119 +248,176 @@ void RegProtester::doSomething() {
         if (canShout && getWorld()->isInRange(getX(), getY(), icemanX, icemanY, 4.0f)) {
           switch (getDirection()) {
             case up :
-              if (getY() < icemanY) { getWorld()->shoutAtIceman(); canShout = false; }
+              if (getY() <= icemanY) { getWorld()->shoutAtIceman(); canShout = false; }
               break;
             case down :
-              if (getY() > icemanY) { getWorld()->shoutAtIceman(); canShout = false; }
+              if (getY() >= icemanY) { getWorld()->shoutAtIceman(); canShout = false; }
               break;
             case right :
-              if (getX() < icemanX) { getWorld()->shoutAtIceman(); canShout = false; }
+              if (getX() <= icemanX) { getWorld()->shoutAtIceman(); canShout = false; }
               break;
             case left :
-              if (getX() > icemanX) { getWorld()->shoutAtIceman(); canShout = false; }
+              if (getX() >= icemanX) { getWorld()->shoutAtIceman(); canShout = false; }
               break;
           }
           return;
         }
         
-        if (!canShout) {
-          if (non_resting_ticks == 15) {
-            non_resting_ticks = 0;
+        if (non_resting_ticks % 15 == 0) {
             canShout = true;
-          }
-          else { ++non_resting_ticks; }
         }
         
         /// if protester is in a straight horizontal or vertical line of sight to iceman
-        if (getX() == icemanX || getY() == icemanY) {
-          Direction dir = none;
-          if (getWorld()->canSeeIceman(getX(), getY(), icemanX, icemanY, dir)) {
-            setDirection(dir);
-            switch (dir) {
-              case up :
-                moveTo(getX(), getY()+1); break;
-              case down :
-                moveTo(getX(), getY()-1); break;
-              case right :
-                moveTo(getX()+1, getY()); break;
-              case left :
-                moveTo(getX()-1, getY()); break;
-            }
-            setMoveStraightDistance_0();
-            return;
+        Direction dir = none;
+        if (getWorld()->canSeeIceman(getX(), getY(), icemanX, icemanY, dir)) {
+          setDirection(dir);
+          switch (dir) {
+            case up :
+              if (abs(getY()-icemanY) > 4) { moveTo(getX(), getY()+1); }
+              break;
+            case down :
+              if (abs(getY()-icemanY) > 4) { moveTo(getX(), getY()-1); }
+              break;
+            case right :
+              if (abs(getX()-icemanX) > 4) { moveTo(getX()+1, getY()); }
+              break;
+            case left :
+              if (abs(getX()-icemanX) > 4) { moveTo(getX()-1, getY()); }
+              break;
           }
+          setMoveStraightDistance_0();
+          return;
         }
-        else { /// if protester can't directly see the iceman
-          if (getMoveStraightDistance() == 0) {
+        
+        else { /// 6) if protester can't directly see the iceman
+          if (!canMoveStraight()) { /// if MoveStraightDistance == 0, pick another direction
+            int dir = rand() % 4 + 1; /// pick a random direction(1-4)
             while (true) {
-              int dir = rand() % 4 + 1; /// pick a random direction(1-4)
               switch (dir) {
                 case up :
-                  if (getWorld()->isIcy(getX(), getY(), up) || getWorld()->isBouldery(getX(), getY(), up)) continue; // maybe improvement
+                  if (getWorld()->isIcy(getX(), getY(), up) || getWorld()->isBouldery(getX(), getY(), up)) {
+                    dir = (dir + rand() % 3) + 1; // maybe improvement
+                    continue;
+                  }
                 case down :
-                  if (getWorld()->isIcy(getX(), getY(), down) || getWorld()->isBouldery(getX(), getY(), down)) continue;
+                  if (getWorld()->isIcy(getX(), getY(), down) || getWorld()->isBouldery(getX(), getY(), down)) {
+                    dir = (dir + rand() % 3) + 1; // maybe improvement
+                    continue;
+                  }
                 case right :
-                  if (getWorld()->isIcy(getX(), getY(), right) || getWorld()->isBouldery(getX(), getY(), right)) continue;
+                  if (getWorld()->isIcy(getX(), getY(), right) || getWorld()->isBouldery(getX(), getY(), right)) {
+                    dir = (dir + rand() % 3) + 1; // maybe improvement
+                    continue;
+                  }
                 case left :
-                  if (getWorld()->isIcy(getX(), getY(), left) || getWorld()->isBouldery(getX(), getY(), left)) continue;
+                  if (getWorld()->isIcy(getX(), getY(), left) || getWorld()->isBouldery(getX(), getY(), left)) {
+                    dir = (dir + rand() % 3) + 1; // maybe improvement
+                    continue;
+                  }
 
                   setDirection((Direction)dir);
-                  pickMoveStraightDistance();
-                  // continue with step 8
+                  setMoveStraightDistance();
                   break;
+                  /// continue with step 8
               }
               break;
             }
-            return;
           }
-          else { /// if MoveStraightDistance > 0
-            decMoveStraightDistance();
-//            switch (getDirection()) {
-//              case up :
-//                moveTo(getX(), getY()+1); break;
-//              case down :
-//                moveTo(getX(), getY()-1); break;
-//              case right :
-//                moveTo(getX()+1, getY()); break;
-//              case left :
-//                moveTo(getX()-1, getY()); break;
-//            }
+          
+          else { /// 7) if MoveStraightDistance > 0
+            countMoveStraightDistance();
+
+            if (canTurn && getWorld()->isAtJunction(getX(), getY(), getDirection())) {
+              canTurn = false;
+                switch (getDirection()) {
+                  case up :
+                  case down :
+                    if (rand() % 2 == 0) {
+                      if (getWorld()->isIcy(getX(), getY(), right) || getWorld()->isBouldery(getX(), getY(), right)) {
+                        setDirection(left);
+                      }
+                      else setDirection(right);
+                    }
+                    else {
+                      if (getWorld()->isIcy(getX(), getY(), left) || getWorld()->isBouldery(getX(), getY(), left)) {
+                        setDirection(right);
+                      }
+                      else setDirection(left);
+                    }
+                    break;
+                    
+                  case right :
+                  case left :
+                    if (rand() % 2 == 0) {
+                      if (getWorld()->isIcy(getX(), getY(), up) || getWorld()->isBouldery(getX(), getY(), up)) {
+                        setDirection(down);
+                      }
+                      else setDirection(up);
+                    }
+                    else {
+                      if (getWorld()->isIcy(getX(), getY(), down) || getWorld()->isBouldery(getX(), getY(), down)) {
+                        setDirection(up);
+                      }
+                      else setDirection(down);
+                    }
+                    break;
+                }
+              setMoveStraightDistance();
+            }
+            
+            if (non_resting_ticks % 200 == 0) {
+                canTurn = true;
+            }
+          }
+            
+          switch (getDirection()) {
+            case up :
+              moveTo(getX(), getY()+1); break;
+            case down :
+              moveTo(getX(), getY()-1); break;
+            case right :
+              moveTo(getX()+1, getY()); break;
+            case left :
+              moveTo(getX()-1, getY()); break;
+          }
+          
+          if (getWorld()->isIcy(getX(), getY(), getDirection()) || getWorld()->isBouldery(getX(), getY(), getDirection())) {
+            setMoveStraightDistance_0();
           }
         }
-        
-        
-        
-        
         break; /// end of "stay" state
     }
   }
-  else { ++resting_ticks; return; }
+  else { countRestingTicks(); return; }
 }
 
 /*================ HARD PROTESTER ================*/
 void HardProtester::doSomething() {
   if (!isAlive()) return;
   
-  if (resting_ticks == std::max(0, 3 - (int)getWorld()->getLevel() / 4)) { /// when it's time to move
+  if (canMove()) { /// when resting tick finished counting OR if it's the very first tick the protester being created
     switch (getState()) {
-      case WAIT : /// when bribed by gold or shot by water
-        if (stalled_ticks == std::max(50, 100 - (int)getWorld()->getLevel() * 10)) {
+      case WAIT : /// when shot by water
+        if (canGoOn()) { /// when finished being stalled
           setState(STAY);
         }
         else {
-          ++stalled_ticks;
+          countStalledTicks();
         }
         break;
         
       case LEAVE : /// fully get annoyed and leave the oil field
-        resting_ticks = 0;
+        setRestingTicks(); /// reset resting tick
         
         if (getX() == 60 && getY() == 60) { setDead(); return; }
         // ADD: findShortestPath(getX(), getY(), 60, 60)
+        moveTo(getX()+1, getY()); // THIS IS TEST
         break;
         
       case STAY : /// non-leave-the-oil-field state
-        resting_ticks = 0;
+        setRestingTicks();
+        ++non_resting_ticks;
+        if (non_resting_ticks == 5000) non_resting_ticks = 0;
         
         int icemanX = getWorld()->getIce_man()->getX();
         int icemanY = getWorld()->getIce_man()->getY();
@@ -293,82 +426,147 @@ void HardProtester::doSomething() {
         if (canShout && getWorld()->isInRange(getX(), getY(), icemanX, icemanY, 4.0f)) {
           switch (getDirection()) {
             case up :
-              if (getY() < icemanY) { getWorld()->shoutAtIceman(); canShout = false; }
+              if (getY() <= icemanY) { getWorld()->shoutAtIceman(); canShout = false; }
               break;
             case down :
-              if (getY() > icemanY) { getWorld()->shoutAtIceman(); canShout = false; }
+              if (getY() >= icemanY) { getWorld()->shoutAtIceman(); canShout = false; }
               break;
             case right :
-              if (getX() < icemanX) { getWorld()->shoutAtIceman(); canShout = false; }
+              if (getX() <= icemanX) { getWorld()->shoutAtIceman(); canShout = false; }
               break;
             case left :
-              if (getX() > icemanX) { getWorld()->shoutAtIceman(); canShout = false; }
+              if (getX() >= icemanX) { getWorld()->shoutAtIceman(); canShout = false; }
               break;
           }
           return;
         }
         
-        if (!canShout) {
-          if (non_resting_ticks == 15) {
-            non_resting_ticks = 0;
+        if (non_resting_ticks % 15 == 0) {
             canShout = true;
-          }
-          else { ++non_resting_ticks; }
         }
         
-        if (getX() == icemanX || getY() == icemanY) {
-          Direction dir = none;
-          if (getWorld()->canSeeIceman(getX(), getY(), icemanX, icemanY, dir)) {
-            setDirection(dir);
-            switch (dir) {
-              case up :
-                moveTo(getX(), getY()+1); break;
-              case down :
-                moveTo(getX(), getY()-1); break;
-              case right :
-                moveTo(getX()+1, getY()); break;
-              case left :
-                moveTo(getX()-1, getY()); break;
-            }
-            setMoveStraightDistance_0();
-            return;
+        /// if protester is in a straight horizontal or vertical line of sight to iceman
+        Direction dir = none;
+        if (getWorld()->canSeeIceman(getX(), getY(), icemanX, icemanY, dir)) {
+          setDirection(dir);
+          switch (dir) {
+            case up :
+              if (abs(getY()-icemanY) > 4) { moveTo(getX(), getY()+1); }
+              break;
+            case down :
+              if (abs(getY()-icemanY) > 4) { moveTo(getX(), getY()-1); }
+              break;
+            case right :
+              if (abs(getX()-icemanX) > 4) { moveTo(getX()+1, getY()); }
+              break;
+            case left :
+              if (abs(getX()-icemanX) > 4) { moveTo(getX()-1, getY()); }
+              break;
           }
+          setMoveStraightDistance_0();
+          return;
         }
-        else { /// if protester can't directly see the iceman
-          if (getMoveStraightDistance() == 0) {
+        
+        else { /// 6) if protester can't directly see the iceman
+          if (!canMoveStraight()) { /// if MoveStraightDistance == 0, pick another direction
+            int dir = rand() % 4 + 1; /// pick a random direction(1-4)
             while (true) {
-              int dir = rand() % 4 + 1; /// pick a random direction
               switch (dir) {
                 case up :
-                  if (getWorld()->isIcy(getX(), getY(), up) || getWorld()->isBouldery(getX(), getY(), up)) continue; // maybe improvement
+                  if (getWorld()->isIcy(getX(), getY(), up) || getWorld()->isBouldery(getX(), getY(), up)) {
+                    dir = (dir + rand() % 3) + 1; // maybe improvement
+                    continue;
+                  }
                 case down :
-                  if (getWorld()->isIcy(getX(), getY(), down) || getWorld()->isBouldery(getX(), getY(), down)) continue;
+                  if (getWorld()->isIcy(getX(), getY(), down) || getWorld()->isBouldery(getX(), getY(), down)) {
+                    dir = (dir + rand() % 3) + 1; // maybe improvement
+                    continue;
+                  }
                 case right :
-                  if (getWorld()->isIcy(getX(), getY(), right) || getWorld()->isBouldery(getX(), getY(), right)) continue;
+                  if (getWorld()->isIcy(getX(), getY(), right) || getWorld()->isBouldery(getX(), getY(), right)) {
+                    dir = (dir + rand() % 3) + 1; // maybe improvement
+                    continue;
+                  }
                 case left :
-                  if (getWorld()->isIcy(getX(), getY(), left) || getWorld()->isBouldery(getX(), getY(), left)) continue;
-                  
+                  if (getWorld()->isIcy(getX(), getY(), left) || getWorld()->isBouldery(getX(), getY(), left)) {
+                    dir = (dir + rand() % 3) + 1; // maybe improvement
+                    continue;
+                  }
+
                   setDirection((Direction)dir);
-                  pickMoveStraightDistance();
+                  setMoveStraightDistance();
                   break;
+                  /// continue with step 8
               }
               break;
             }
-            return;
           }
-          else {
-            decMoveStraightDistance();
+          
+          else { /// 7) if MoveStraightDistance > 0
+            countMoveStraightDistance();
+
+            if (canTurn && getWorld()->isAtJunction(getX(), getY(), getDirection())) {
+              canTurn = false;
+                switch (getDirection()) {
+                  case up :
+                  case down :
+                    if (rand() % 2 == 0) {
+                      if (getWorld()->isIcy(getX(), getY(), right) || getWorld()->isBouldery(getX(), getY(), right)) {
+                        setDirection(left);
+                      }
+                      else setDirection(right);
+                    }
+                    else {
+                      if (getWorld()->isIcy(getX(), getY(), left) || getWorld()->isBouldery(getX(), getY(), left)) {
+                        setDirection(right);
+                      }
+                      else setDirection(left);
+                    }
+                    break;
+                    
+                  case right :
+                  case left :
+                    if (rand() % 2 == 0) {
+                      if (getWorld()->isIcy(getX(), getY(), up) || getWorld()->isBouldery(getX(), getY(), up)) {
+                        setDirection(down);
+                      }
+                      else setDirection(up);
+                    }
+                    else {
+                      if (getWorld()->isIcy(getX(), getY(), down) || getWorld()->isBouldery(getX(), getY(), down)) {
+                        setDirection(up);
+                      }
+                      else setDirection(down);
+                    }
+                    break;
+                }
+              setMoveStraightDistance();
+            }
+            
+            if (non_resting_ticks % 200 == 0) {
+                canTurn = true;
+            }
+          }
+            
+          switch (getDirection()) {
+            case up :
+              moveTo(getX(), getY()+1); break;
+            case down :
+              moveTo(getX(), getY()-1); break;
+            case right :
+              moveTo(getX()+1, getY()); break;
+            case left :
+              moveTo(getX()-1, getY()); break;
+          }
+          
+          if (getWorld()->isIcy(getX(), getY(), getDirection()) || getWorld()->isBouldery(getX(), getY(), getDirection())) {
+            setMoveStraightDistance_0();
           }
         }
-        
-        
-        // !!!!!!!!! THIS IS HARDCORE !!!!!!!!!!!
-        
-        
         break; /// end of "stay" state
     }
   }
-  else { ++resting_ticks; return; }
+  else { countRestingTicks(); return; }
 }
 
 

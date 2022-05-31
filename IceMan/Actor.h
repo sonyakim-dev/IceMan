@@ -73,32 +73,44 @@ public:
   virtual int getSonar() const { return i_sonars; }
 };
 
+
 class Protester : public Character {
 private:
   unsigned int move_straight_distance; /// numSquresToMoveInCurrentDirection
+  unsigned int resting_ticks;
+  unsigned int stalled_ticks;
+  void setStalledTicks();
+  bool can_move = true;
 protected:
-  int resting_ticks {0};
-  int non_resting_ticks {0};
-  int stalled_ticks {0};
+  unsigned int non_resting_ticks {0};
+  unsigned int non_resting_turn {0}; //TEST
   bool canShout = true;
+  bool canTurn = true;
+  
+  virtual bool canMoveStraight() const { return move_straight_distance != 0; }
+  virtual void setMoveStraightDistance() final { move_straight_distance = rand() % 53 + 8; } /// 8 <= rand <= 60
+  virtual void setMoveStraightDistance_0() final { move_straight_distance = 0; }
+  virtual void countMoveStraightDistance() final { --move_straight_distance; }
+  
+  virtual bool canMove() final;
+  virtual void setRestingTicks() final;
+  virtual void countRestingTicks() final { --resting_ticks; }
+  
+  virtual bool canGoOn() const { return stalled_ticks == 0; }
+  virtual void countStalledTicks() final { --stalled_ticks; }
 public:
   Protester(int imageID, StudentWorld* stud_world)
-    : Character(imageID, 60, 60, stud_world, left, 1, 0) {}
+  : Character(imageID, 60, 60, stud_world, left, 1, 0) { setMoveStraightDistance(); setRestingTicks(); setStalledTicks(); }
   virtual ~Protester() {}
   virtual void doSomething() override = 0;
   virtual void getAnnoyed(unsigned int damage) override;
-  virtual bool findShortestPath(int startX, int startY, int finalX, int finalY) const;
-  virtual int getMoveStraightDistance() const { return move_straight_distance; }
-  virtual void setMoveStraightDistance_0() { move_straight_distance = 0; }
-  virtual void pickMoveStraightDistance() { move_straight_distance = rand() % 53 + 8; } /// 8 <= rand <= 60
-  virtual void decMoveStraightDistance() { --move_straight_distance; }
-  
+  virtual bool findShortestPath(int startX, int startY, int finalX, int finalY, Direction& dir, int& steps) const;
 };
 
 class RegProtester : public Protester {
 public:
   RegProtester(StudentWorld* stud_world)
-    : Protester(IID_PROTESTER, stud_world) { setVisible(true); setHP(5); setState(STAY); pickMoveStraightDistance(); }
+    : Protester(IID_PROTESTER, stud_world) { setVisible(true); setHP(5); setState(STAY); }
   virtual ~RegProtester() {}
   virtual void doSomething() override;
 };

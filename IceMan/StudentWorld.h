@@ -69,7 +69,7 @@ public:
     while (B > 0) {
       int x = rand() % 61, y = rand() % 37 + 20;
       
-      /// if x and y are in the middle aisel or if there's already other item, regenerate randome num
+      /// if x and y are in the middle aisel or if there's already other item, regenerate random num
       if (x >= 26 && x <= 33) continue;
       if (isOccupied(x, y, 6.0f)) continue;
       
@@ -138,14 +138,15 @@ public:
             actors.emplace_back(std::make_shared<Sonar>(this));
         }
         else {
-            int x = rand() % 58;
-            int y = rand() % 58;
-            while (!canAddWater(x,y))
-            {
-                x = rand() % 58;
-                y = rand() % 58;
+            while (true) {
+              int x = rand() % 58;
+              int y = rand() % 58;
+              if (!canAddWater(x, y)) continue;
+              if (!isOccupied(x, y, 4.0f)) {
+                actors.emplace_back(std::make_shared<Water>(x, y, this));
+                break;
+              }
             }
-            actors.emplace_back(std::make_shared<Water>(x, y, this));
         }
     }
     
@@ -163,10 +164,6 @@ public:
     }
     else if (timeToAddProtester > 0) { --timeToAddProtester; }
     
-    // THIS IS TEST
-    for (auto protester : protesters) {
-      if (protester->getX() < 0 || protester->getX() > 60) protester->setDead();
-    }
     
     /// deallocate dead actors
     for (int i = 0; i < actors.size(); ++i) {
@@ -204,9 +201,19 @@ public:
   std::string setPrecision(const unsigned int& val, const unsigned int& precision, const char&& placeholder) const;
   void setDisplayText();
   void initIce();
-  void initGold();
-  void initSonar();
-  void initBoulder();
+  
+  bool isInRange(const int& x1, const int& y1, const int& x2, const int& y2, const float& radius) const {
+    return (sqrt(pow(x1-x2, 2) + pow(y1-y2, 2)) <= radius) ? true : false;
+  }
+  bool isOccupied(const int& x, const int& y, const float& radius) const {
+    for (const auto& actor : actors) {
+      if (isInRange(x, y, actor->getX(), actor->getY(), radius)) return true;
+    }
+    return false;
+  }
+  bool isIcy(const int& x, const int& y, const int& dir) const;
+  bool isBouldery(const int& x, const int& y, const int& dir) const;
+  bool canAddWater(const int& x, const int& y) const;
   
   void foundOil() { playSound(SOUND_FOUND_OIL); increaseScore(1000); --num_oil; }
   void foundGold() { playSound(SOUND_GOT_GOODIE); increaseScore(10); ice_man->addGold(); }
@@ -224,40 +231,7 @@ public:
   
   void shoutAtIceman() { playSound(SOUND_PROTESTER_YELL); ice_man->getAnnoyed(2); }
   bool canSeeIceman(const int& protX, const int& protY, const int& manX, const int& manY, Actor::Direction& dir) const;
-  
-  bool isInRange(const int& x1, const int& y1, const int& x2, const int& y2, const float& radius) const {
-    return (sqrt(pow(x1-x2, 2) + pow(y1-y2, 2)) <= radius) ? true : false;
-  }
-  bool isOccupied(const int& x, const int& y, const float& radius) const {
-    for (const auto& actor : actors) {
-      if (isInRange(x, y, actor->getX(), actor->getY(), radius)) return true;
-    }
-    return false;
-  }
-  bool isIcy(const int& x, const int& y, const int& dir) const;
-  bool isBouldery(const int& x, const int& y, const int& dir) const;
-  bool canAddWater(const int& x, const int& y) const;
-  
-  bool isAtJunction(const int& x, const int& y, const Actor::Direction& dir) const {
-    switch (dir) {
-      case Actor::up :
-      case Actor::down :
-        if ((!isIcy(x, y, Actor::right) && !isBouldery(x, y, Actor::right)) ||
-            (!isIcy(x, y, Actor::left) && !isBouldery(x, y, Actor::left))) {
-          return true;
-        }
-        break;
-        
-      case Actor::right :
-      case Actor::left :
-        if ((!isIcy(x, y, Actor::up) && !isBouldery(x, y, Actor::up)) ||
-            (!isIcy(x, y, Actor::down) && !isBouldery(x, y, Actor::down))) {
-          return true;
-        }
-        break;
-    }
-    return false;
-  }
+  bool isAtJunction(const int& x, const int& y, const Actor::Direction& dir) const;
 };
 
 #endif // STUDENTWORLD_H_

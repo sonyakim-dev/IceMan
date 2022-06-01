@@ -76,31 +76,25 @@ public:
 
 class Protester : public Character {
 private:
-  unsigned int move_straight_distance; /// numSquresToMoveInCurrentDirection
-  unsigned int resting_ticks;
-  unsigned int stalled_ticks;
-  void setStalledTicks();
   bool can_move = true;
+  unsigned int resting_ticks;
 protected:
-  unsigned int non_resting_ticks {0};
-  unsigned int non_resting_turn {0}; //TEST
+  unsigned int move_straight_distance; /// numSquresToMoveInCurrentDirection
+  unsigned int stalled_ticks;
   bool canShout = true;
+  unsigned int ticks_since_shout {0};
   bool canTurn = true;
+  unsigned int ticks_since_turn {0};
+
+  virtual void pickMoveStraightDistance() { move_straight_distance = rand() % 53 + 8; } /// 8 <= rand <= 60
+  virtual void setStalledTicks();
+  virtual bool isTimeToMove();
+  virtual void setRestingTicks();
+  virtual void countRestingTicks() { --resting_ticks; }
   
-  virtual bool canMoveStraight() const { return move_straight_distance != 0; }
-  virtual void setMoveStraightDistance() final { move_straight_distance = rand() % 53 + 8; } /// 8 <= rand <= 60
-  virtual void setMoveStraightDistance_0() final { move_straight_distance = 0; }
-  virtual void countMoveStraightDistance() final { --move_straight_distance; }
-  
-  virtual bool canMove() final;
-  virtual void setRestingTicks() final;
-  virtual void countRestingTicks() final { --resting_ticks; }
-  
-  virtual bool canGoOn() const { return stalled_ticks == 0; }
-  virtual void countStalledTicks() final { --stalled_ticks; }
 public:
   Protester(int imageID, StudentWorld* stud_world)
-  : Character(imageID, 60, 60, stud_world, left, 1, 0) { setMoveStraightDistance(); setRestingTicks(); setStalledTicks(); }
+    : Character(imageID, 60, 60, stud_world, left, 1, 0) { pickMoveStraightDistance(); setRestingTicks(); setStalledTicks(); }
   virtual ~Protester() {}
   virtual void doSomething() override = 0;
   virtual void getAnnoyed(unsigned int damage) override;

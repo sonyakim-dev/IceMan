@@ -110,19 +110,7 @@ public:
   virtual int move() override
   {
     setDisplayText();
-    
-    if (ice_man->getHP() <= 0) {
-      decLives();
-      playSound(SOUND_PLAYER_GIVE_UP);
-      return GWSTATUS_PLAYER_DIED;
-    }
-    
-    if (num_oil <= 0) { /// when you collected all oils on the field!
-      playSound(SOUND_FINISHED_LEVEL);
-      return GWSTATUS_FINISHED_LEVEL;
-    }
-    
-    
+
     /// do something
     for (const auto& actor : actors) {
       if (actor->isAlive()) { actor->doSomething(); }
@@ -131,6 +119,32 @@ public:
       if (protester->isAlive()) { protester->doSomething(); }
     }
     ice_man->doSomething();
+    
+    /// if ice_man died
+    if (ice_man->getHP() <= 0) {
+      decLives();
+      playSound(SOUND_PLAYER_GIVE_UP);
+      return GWSTATUS_PLAYER_DIED;
+    }
+    /// when iceman collected all oils on the field
+    if (num_oil <= 0) {
+      playSound(SOUND_FINISHED_LEVEL);
+      return GWSTATUS_FINISHED_LEVEL;
+    }
+    
+    /// deallocate dead actors
+    for (int i = 0; i < actors.size(); ++i) {
+      if (!actors.at(i)->isAlive()) {
+        actors.at(i) = std::move(actors.at(actors.size()-1));
+        actors.pop_back();
+      }
+    }
+    for (int i = 0; i < protesters.size(); ++i) {
+      if (!protesters.at(i)->isAlive()) {
+        protesters.at(i) = std::move(protesters.at(protesters.size()-1));
+        protesters.pop_back();
+      }
+    }
     
     /// add water or sonar
     if (rand() % goodie_spawn_probability == 0) {
@@ -164,20 +178,6 @@ public:
     }
     else if (timeToAddProtester > 0) { --timeToAddProtester; }
     
-    
-    /// deallocate dead actors
-    for (int i = 0; i < actors.size(); ++i) {
-      if (!actors.at(i)->isAlive()) {
-        actors.at(i) = std::move(actors.at(actors.size()-1));
-        actors.pop_back();
-      }
-    }
-    for (int i = 0; i < protesters.size(); ++i) {
-      if (!protesters.at(i)->isAlive()) {
-        protesters.at(i) = std::move(protesters.at(protesters.size()-1));
-        protesters.pop_back();
-      }
-    }
     
     return GWSTATUS_CONTINUE_GAME;
 	}
@@ -227,10 +227,11 @@ public:
   void discoverGoodies(const int& manX, const int& manY); /// using sonar
   void dropGold(const int& manX, const int& manY); /// using gold
   void squirtWater(const int& manX, const int& manY, const Actor::Direction& dir); /// using water
+  bool bonkIceman(const int& boulderX, const int& boulderY);
 
   bool bribeProtester(const int& goldX, const int& goldY);
   bool shootProtester(const int& waterX, const int& waterY);
-  bool bonkProtester(const int& boulderX, const int& boulderY);
+  void bonkProtester(const int& boulderX, const int& boulderY);
   
   void shoutAtIceman() { playSound(SOUND_PROTESTER_YELL); ice_man->getAnnoyed(2); }
   bool canSeeIceman(const int& protX, const int& protY, const int& manX, const int& manY, Actor::Direction& dir) const;

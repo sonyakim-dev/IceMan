@@ -234,13 +234,20 @@ bool StudentWorld::shootProtester(const int& waterX, const int& waterY) {
   return false;
 }
 
-bool StudentWorld::bonkProtester(const int& boulderX, const int& boulderY) {
+void StudentWorld::bonkProtester(const int& boulderX, const int& boulderY) {
   for (const auto& protester : protesters) {
     if (isInRange(boulderX, boulderY, protester->getX(), protester->getY(), 3.0f) && protester->getState() != LEAVE) {
       protester->getAnnoyed(100);
       increaseScore(500);
-      return true;
+      return;
     }
+  }
+}
+
+bool StudentWorld::bonkIceman(const int& boulderX, const int& boulderY) {
+  if (isInRange(boulderX, boulderY, ice_man->getX(), ice_man->getY(), 3.0f)) {
+    ice_man->getAnnoyed(100);
+    return true;
   }
   return false;
 }

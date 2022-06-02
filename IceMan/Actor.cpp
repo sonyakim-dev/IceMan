@@ -631,16 +631,12 @@ void Boulder::doSomething() {
       
     case FALL :
       /// when it hit the ground OR another boulder OR ice
-      if (getWorld()->isIcyOrBouldery(getX(), getY(), down)) { setDead(); return; }
+      if (getWorld()->isIcyOrBouldery(getX(), getY(), down)) { setDead(); }
       
       /// when it hit the iceman
-      if (getWorld()->isInRange(getX(), getY(), getWorld()->getIce_man()->getX(), getWorld()->getIce_man()->getY(), 3.0f)) {
-        getWorld()->getIce_man()->getAnnoyed(100);
-      }
+      if (getWorld()->bonkIceman(getX(), getY())) { return; }
       /// when it hit the protester
-      if (getWorld()->bonkProtester(getX(), getY())) {
-        // ADD???
-      }
+      getWorld()->bonkProtester(getX(), getY());
       
       moveTo(getX(), getY()-1);
       break;

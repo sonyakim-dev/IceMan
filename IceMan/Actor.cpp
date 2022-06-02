@@ -93,33 +93,29 @@ void Iceman::getAnnoyed(unsigned int damage) {
 
 
 /*================ PROTESTER ================*/
-bool Protester::findShortestPath(int startX, int startY, int finalX, int finalY, Direction& dir, int& steps) const {
+void Protester::findShortestPath(int startX, int startY, int finalX, int finalY) {
   std::queue<std::pair<int, int>> xy;
-  int stepArray[64][64];
-  int currStep, currX, currY;
-  bool check = false;
+  int currStep = 0, currX, currY;
   
-  for (int i = 0; i < 64; ++i) {
-    for (int j = 0; j < 64; ++j) {
-      stepArray[i][j] = 9999;
-    }
-  }
-  
-  stepArray[startX][startY] = 0;
-  xy.push(std::make_pair(startX, startY));
+  stepArray[finalX][finalY] = 0;
+  xy.push(std::make_pair(finalX, finalY));
   
   while (!xy.empty()) {
     currX = xy.front().first;
     currY = xy.front().second;
     xy.pop();
     
-    if (currX == finalX && currY == finalY) { check = true; }
+    if (currX == startX && currY == startY) {
+      didFindPath = true;
+      step = stepArray[currX][currY];
+      return;
+    }
     
     currStep = stepArray[currX][currY];
     ++currStep;
     
     if (currY < 60 && !getWorld()->isIcyOrBouldery(currX, currY, up) &&
-        stepArray[currX][currY+1] == 9999)
+        stepArray[currX][currY+1] == 9999 )
     {
       stepArray[currX][currY+1] = currStep;
       xy.push(std::make_pair(currX, currY+1));
@@ -136,58 +132,16 @@ bool Protester::findShortestPath(int startX, int startY, int finalX, int finalY,
       stepArray[currX+1][currY] = currStep;
       xy.push(std::make_pair(currX+1, currY));
     }
-    if (currX > 1 && !getWorld()->isIcyOrBouldery(currX, currY, left) &&
-        stepArray[currX+1][currY] == 9999)
+    if (currX > 0 && !getWorld()->isIcyOrBouldery(currX, currY, left) &&
+        stepArray[currX-1][currY] == 9999)
     {
       stepArray[currX-1][currY] = currStep;
       xy.push(std::make_pair(currX-1, currY));
     }
   } /// end of while loop
   
-    int minimum;
-    
-    if (finalX == 0 && finalY == 0)
-    {
-        minimum = std::min(stepArray[finalX+1][finalY], stepArray[finalX][finalY+1]);
-        if(minimum == stepArray[finalX+1][finalY])
-            dir = right;
-        else
-            dir = up;
-    }
-    else if (finalX == 0)
-    {
-        minimum = std::min(stepArray[finalX+1][finalY],std::min(stepArray[finalX][finalY+1], stepArray[finalX][finalY-1]));
-        if(minimum == stepArray[finalX+1][finalY])
-            dir = right;
-        else if(minimum == stepArray[finalX][finalY + 1])
-            dir = up;
-        else
-            dir = down;
-    }
-    else if (finalY == 0)
-    {
-        minimum = std::min(stepArray[finalX][finalY + 1], std::min(stepArray[finalX - 1][finalY], stepArray[finalX + 1][finalY]));
-        if(minimum == stepArray[finalX+1][finalY])
-            dir = right;
-        else if(minimum == stepArray[finalX][finalY + 1])
-            dir = up;
-        else
-            dir = left;
-    }
-    else
-    {
-        minimum = std::min(std::min(stepArray[finalX][finalY + 1], stepArray[finalX][finalY-1]), std::min(stepArray[finalX - 1][finalY], stepArray[finalX + 1][finalY]));
-        if(minimum == stepArray[finalX+1][finalY])
-            dir = right;
-        else if(minimum == stepArray[finalX][finalY + 1])
-            dir = up;
-        else if(minimum == stepArray[finalX-1][finalY])
-            dir = left;
-        else
-            dir = down;
-    }
-    steps = minimum;
-    return check;
+  didFindPath = false;
+  return;
 }
 
 void Protester::getAnnoyed(unsigned int damage) {
@@ -233,9 +187,34 @@ void RegProtester::doSomething() {
       case LEAVE : /// fully get annoyed and leave the oil field
         setRestingTicks();
         
-        if (getX() == 60 && getY() == 60) { setDead(); return; }
-        // ADD: findShortestPath(getX(), getY(), 60, 60)
-        moveTo(getX()+1, getY()); // THIS IS TEST
+        if (getX() == 60 && getY() == 60) { setDead(); break; }
+        
+        if (!didFindPath) {
+          findShortestPath(getX(), getY(), 60, 60);
+        }
+        else {
+          if (step - 1 == stepArray[getX()][getY()+1]) {
+            setDirection(up);
+            moveTo(getX(), getY()+1);
+            --step;
+          }
+          else if (step - 1 == stepArray[getX()][getY()-1]) {
+            setDirection(down);
+            moveTo(getX(), getY()-1);
+            --step;
+          }
+          else if (step - 1 == stepArray[getX()+1][getY()]) {
+            setDirection(right);
+            moveTo(getX()+1, getY());
+            --step;
+          }
+          else if (step - 1 == stepArray[getX()-1][getY()]) {
+            setDirection(left);
+            moveTo(getX()-1, getY());
+            --step;
+          }
+
+        }
         break;
         
         
@@ -387,9 +366,34 @@ void HardProtester::doSomething() {
       case LEAVE : /// fully get annoyed and leave the oil field
         setRestingTicks();
         
-        if (getX() == 60 && getY() == 60) { setDead(); return; }
-        // ADD: findShortestPath(getX(), getY(), 60, 60)
-        moveTo(getX()+1, getY()); // THIS IS TEST
+        if (getX() == 60 && getY() == 60) { setDead(); break; }
+        
+        if (!didFindPath) {
+          findShortestPath(getX(), getY(), 60, 60);
+        }
+        else {
+          if (step - 1 == stepArray[getX()][getY()+1]) {
+            setDirection(up);
+            moveTo(getX(), getY()+1);
+            --step;
+          }
+          else if (step - 1 == stepArray[getX()][getY()-1]) {
+            setDirection(down);
+            moveTo(getX(), getY()-1);
+            --step;
+          }
+          else if (step - 1 == stepArray[getX()+1][getY()]) {
+            setDirection(right);
+            moveTo(getX()+1, getY());
+            --step;
+          }
+          else if (step - 1 == stepArray[getX()-1][getY()]) {
+            setDirection(left);
+            moveTo(getX()-1, getY());
+            --step;
+          }
+
+        }
         break;
         
         
@@ -445,8 +449,30 @@ void HardProtester::doSomething() {
           int M = 16 + getWorld()->getLevel() * 2;
           
           /// 5) if protester is less than or equal to a total of M legal horizontal or vertical moves away from the curr iceman location
-          // ADD
-          // return;
+          // NEED TO FIX!!
+              findShortestPath(getX(), getY(), getWorld()->getIce_man()->getX(), getWorld()->getIce_man()->getY());
+              if (step <= M) {
+                if (step - 1 == stepArray[getX()][getY()+1]) {
+                  setDirection(up);
+                  moveTo(getX(), getY()+1);
+                  --step;
+                }
+                else if (step - 1 == stepArray[getX()][getY()-1]) {
+                  setDirection(down);
+                  moveTo(getX(), getY()-1);
+                  --step;
+                }
+                else if (step - 1 == stepArray[getX()+1][getY()]) {
+                  setDirection(right);
+                  moveTo(getX()+1, getY());
+                  --step;
+                }
+                else if (step - 1 == stepArray[getX()-1][getY()]) {
+                  setDirection(left);
+                  moveTo(getX()-1, getY());
+                  --step;
+                }
+            }
           
           /// 7) if MoveStraightDistance <=  0
           if (move_straight_distance <= 0) {

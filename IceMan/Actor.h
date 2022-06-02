@@ -85,6 +85,9 @@ protected:
   unsigned int ticks_since_shout {0};
   bool canTurn = true;
   unsigned int ticks_since_turn {0};
+  int stepArray[64][64];
+  bool didFindPath = false;
+  int step = 0;
 
   virtual void pickMoveStraightDistance() { move_straight_distance = rand() % 53 + 8; } /// 8 <= rand <= 60
   virtual void setStalledTicks();
@@ -92,14 +95,21 @@ protected:
   virtual void setRestingTicks();
   virtual void countRestingTicks() { --resting_ticks; }
   virtual void setRestingTicks_0() { resting_ticks = 0; }
+  virtual void setStepArray() {
+    for (int i = 0; i < 64; ++i) {
+      for (int j = 0; j < 64; ++j) {
+        stepArray[i][j] = 9999;
+      }
+    }
+  }
   
 public:
   Protester(int imageID, StudentWorld* stud_world)
-    : Character(imageID, 60, 60, stud_world, left, 1, 0) { pickMoveStraightDistance(); setRestingTicks(); setStalledTicks(); }
+  : Character(imageID, 60, 60, stud_world, left, 1, 0) { pickMoveStraightDistance(); setRestingTicks(); setStalledTicks(); setStepArray(); }
   virtual ~Protester() {}
   virtual void doSomething() override = 0;
   virtual void getAnnoyed(unsigned int damage) override;
-  virtual bool findShortestPath(int startX, int startY, int finalX, int finalY, Direction& dir, int& steps) const;
+  virtual void findShortestPath(int startX, int startY, int finalX, int finalY);
 };
 
 class RegProtester : public Protester {

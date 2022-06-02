@@ -174,9 +174,11 @@ public:
         (rand() % 101 <= hardcore_spawn_probability) ?
           protesters.emplace_back(std::make_shared<HardProtester>(this))
           : protesters.emplace_back(std::make_shared<RegProtester>(this));
+      
       }
     }
     else if (timeToAddProtester > 0) { --timeToAddProtester; }
+    
     
     
     return GWSTATUS_CONTINUE_GAME;

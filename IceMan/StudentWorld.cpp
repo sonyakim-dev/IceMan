@@ -225,6 +225,9 @@ bool StudentWorld::shootProtester(const int& waterX, const int& waterY) {
     if (isInRange(waterX, waterY, protester->getX(), protester->getY(), 3.0f) && protester->getState() != LEAVE) {
       protester->setState(WAIT); /// protester get stalled for a certain tick
       protester->getAnnoyed(2);
+      if (protester->getState() == LEAVE) {
+        (typeid(*protester) == typeid(RegProtester)) ? increaseScore(100) : increaseScore(250);
+      }
       return true;
     }
   }

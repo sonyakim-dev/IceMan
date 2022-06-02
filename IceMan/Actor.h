@@ -91,6 +91,7 @@ protected:
   virtual bool isTimeToMove();
   virtual void setRestingTicks();
   virtual void countRestingTicks() { --resting_ticks; }
+  virtual void setRestingTicks_0() { resting_ticks = 0; }
   
 public:
   Protester(int imageID, StudentWorld* stud_world)

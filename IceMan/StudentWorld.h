@@ -211,9 +211,12 @@ public:
     }
     return false;
   }
+  bool canAddWater(const int& x, const int& y) const;
   bool isIcy(const int& x, const int& y, const int& dir) const;
   bool isBouldery(const int& x, const int& y, const int& dir) const;
-  bool canAddWater(const int& x, const int& y) const;
+  bool isIcyOrBouldery(const int& x, const int& y, const int& dir) const {
+    return (isIcy(x, y, dir) || isBouldery(x, y, dir)) ? true : false;
+  }
   
   void foundOil() { playSound(SOUND_FOUND_OIL); increaseScore(1000); --num_oil; }
   void foundGold() { playSound(SOUND_GOT_GOODIE); increaseScore(10); ice_man->addGold(); }

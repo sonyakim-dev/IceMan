@@ -22,7 +22,7 @@ private:
   unsigned int hardcore_spawn_probability;
   unsigned int goodie_spawn_probability;
   /// below is a tick counter
-  int timeToAddProtester;
+  int ticks_since_protester_created;
   bool isTheFirstTick = false;
   
 public:
@@ -100,7 +100,7 @@ public:
     
     goodie_spawn_probability = getLevel() * 25 + 300;
     hardcore_spawn_probability = std::min(90, (int)getLevel() * 10 + 30);
-    timeToAddProtester = std::max(25, 200 - (int)getLevel());
+//    timeToAddProtester = std::max(25, 200 - (int)getLevel());
     isTheFirstTick = true;
     
     return GWSTATUS_CONTINUE_GAME;
@@ -165,21 +165,18 @@ public:
     }
     
     /// add protester
-    if (timeToAddProtester == 0 || isTheFirstTick) {
+    if (isTheFirstTick || ticks_since_protester_created >= std::max(25, 200 - (int)getLevel())) {
       isTheFirstTick = false;
       
       if (protesters.size() < target_num_protester) { /// if curr num_protester in field is less than max creatable protester num, recount time)
-        timeToAddProtester = std::max(25, 200 - (int)getLevel());
-        
         (rand() % 101 <= hardcore_spawn_probability) ?
           protesters.emplace_back(std::make_shared<HardProtester>(this))
           : protesters.emplace_back(std::make_shared<RegProtester>(this));
       
+        ticks_since_protester_created = 0;
       }
     }
-    else if (timeToAddProtester > 0) { --timeToAddProtester; }
-    
-    
+    else if (protesters.size() < target_num_protester) ++ticks_since_protester_created;
     
     return GWSTATUS_CONTINUE_GAME;
 	}

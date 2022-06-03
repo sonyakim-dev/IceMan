@@ -86,9 +86,6 @@ void Iceman::doSomething() {
 
 void Iceman::getAnnoyed(unsigned int damage) {
   dropHP(damage);
-//  if (getHP() <= 0) {
-//
-//  }
 }
 
 
@@ -115,7 +112,7 @@ void Protester::findShortestPath(int startX, int startY, int finalX, int finalY)
     ++currStep;
     
     if (currY < 60 && !getWorld()->isIcyOrBouldery(currX, currY, up) &&
-        stepArray[currX][currY+1] == 9999 )
+        stepArray[currX][currY+1] == 9999)
     {
       stepArray[currX][currY+1] = currStep;
       xy.push(std::make_pair(currX, currY+1));
@@ -190,9 +187,9 @@ void RegProtester::doSomething() {
         if (getX() == 60 && getY() == 60) { setDead(); break; }
         
         if (!didFindPath) {
-          findShortestPath(getX(), getY(), 60, 60);
+          findShortestPath(getX(), getY(), 60, 60); /// set step array only once
         }
-        else {
+        if (didFindPath) {
           if (step - 1 == stepArray[getX()][getY()+1]) {
             setDirection(up);
             moveTo(getX(), getY()+1);
@@ -371,7 +368,7 @@ void HardProtester::doSomething() {
         if (!didFindPath) {
           findShortestPath(getX(), getY(), 60, 60);
         }
-        else {
+        if (didFindPath) {
           if (step - 1 == stepArray[getX()][getY()+1]) {
             setDirection(up);
             moveTo(getX(), getY()+1);
@@ -446,33 +443,36 @@ void HardProtester::doSomething() {
         }
         
         else { /// if protester can't directly see the iceman
-          int M = 16 + getWorld()->getLevel() * 2;
           
           /// 5) if protester is less than or equal to a total of M legal horizontal or vertical moves away from the curr iceman location
-          // NEED TO FIX!!
-              findShortestPath(getX(), getY(), getWorld()->getIce_man()->getX(), getWorld()->getIce_man()->getY());
-              if (step <= M) {
-                if (step - 1 == stepArray[getX()][getY()+1]) {
-                  setDirection(up);
-                  moveTo(getX(), getY()+1);
-                  --step;
-                }
-                else if (step - 1 == stepArray[getX()][getY()-1]) {
-                  setDirection(down);
-                  moveTo(getX(), getY()-1);
-                  --step;
-                }
-                else if (step - 1 == stepArray[getX()+1][getY()]) {
-                  setDirection(right);
-                  moveTo(getX()+1, getY());
-                  --step;
-                }
-                else if (step - 1 == stepArray[getX()-1][getY()]) {
-                  setDirection(left);
-                  moveTo(getX()-1, getY());
-                  --step;
-                }
+          int M = 16 + getWorld()->getLevel() * 2;
+          findShortestPath(getX(), getY(), getWorld()->getIce_man()->getX(), getWorld()->getIce_man()->getY());
+          didFindPath = false;
+          if (step <= M) {
+            if (step - 1 == stepArray[getX()][getY()+1]) {
+              setDirection(up);
+              moveTo(getX(), getY()+1);
+              --step;
             }
+            else if (step - 1 == stepArray[getX()][getY()-1]) {
+              setDirection(down);
+              moveTo(getX(), getY()-1);
+              --step;
+            }
+            else if (step - 1 == stepArray[getX()+1][getY()]) {
+              setDirection(right);
+              moveTo(getX()+1, getY());
+              --step;
+            }
+            else if (step - 1 == stepArray[getX()-1][getY()]) {
+              setDirection(left);
+              moveTo(getX()-1, getY());
+              --step;
+            }
+            setStepArray();
+            return;
+          }
+          setStepArray();
           
           /// 7) if MoveStraightDistance <=  0
           if (move_straight_distance <= 0) {

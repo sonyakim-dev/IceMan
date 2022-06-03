@@ -3,9 +3,9 @@
 
 #include "GraphObject.h"
 
-class StudentWorld; // incomplete type declaration
+class StudentWorld; /// incomplete type declaration
 enum State { TEMP, PERM, WAIT, FALL, STABLE, STAY, LEAVE };
-
+typedef unsigned short int int_;
 
 class Actor : public GraphObject {
 private:
@@ -47,7 +47,7 @@ public:
     : Actor(imageID, startX, startY, stud_world, dir, size, depth) {}
   virtual ~Character() {}
   virtual void doSomething() override = 0;
-  virtual void getAnnoyed(unsigned int damage) = 0; /// both iceman and protester get annoyed
+  virtual void getAnnoyed(unsigned int damage) = 0;
   virtual int getHP() const final { return hit_points; }
 };
 
@@ -61,7 +61,7 @@ public:
     : Character(IID_PLAYER, 30, 60, stud_world, right, 1.0, 0) { setVisible(true); setHP(10); }
   virtual ~Iceman() {}
   virtual void doSomething() override;
-  virtual void getAnnoyed(unsigned int damage) override;
+  virtual void getAnnoyed(unsigned int damage) override { dropHP(damage); }
   virtual void addGold() { ++i_golds; }
   virtual void addWater() { i_waters += 5; }
   virtual void addSonar() { i_sonars += 2; }
@@ -85,17 +85,18 @@ protected:
   unsigned int ticks_since_shout {0};
   bool canTurn = true;
   unsigned int ticks_since_turn {0};
-  int stepArray[64][64];
+  int_ stepArray[64][64];
   bool didFindPath = false;
-  int step = 0;
+  int step {0};
 
   virtual void pickMoveStraightDistance() { move_straight_distance = rand() % 53 + 8; } /// 8 <= rand <= 60
   virtual void setStalledTicks();
   virtual bool isTimeToMove();
   virtual void setRestingTicks();
   virtual void countRestingTicks() { --resting_ticks; }
-  virtual void setRestingTicks_0() { resting_ticks = 0; }
+  virtual void recountRestingTicks() { resting_ticks = 0; }
   virtual void setStepArray() {
+    didFindPath = false;
     for (int i = 0; i < 64; ++i) {
       for (int j = 0; j < 64; ++j) {
         stepArray[i][j] = 9999;
@@ -111,7 +112,7 @@ public:
   virtual ~Protester() {}
   virtual void doSomething() override = 0;
   virtual void getAnnoyed(unsigned int damage) override;
-  virtual void findShortestPath(int startX, int startY, int finalX, int finalY);
+  virtual void findShortestPath(const int startX, const int startY, const int finalX, const int finalY);
 };
 
 class RegProtester : public Protester {

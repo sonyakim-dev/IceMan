@@ -6,7 +6,6 @@
 #include "Actor.h"
 #include <vector>
 #include <memory>
-#include <algorithm>
 #include <cstdlib>
 #include <ctime>
 
@@ -18,11 +17,11 @@ private:
   std::vector<std::shared_ptr<Actor>> actors;
   std::vector<std::shared_ptr<Protester>> protesters;
   unsigned int num_oil {0}; /// curr num of oil left in the field
-  unsigned int target_num_protester; /// num of protester should be created
+  unsigned int target_num_protester; /// num of protester should be created in total
   unsigned int hardcore_spawn_probability;
   unsigned int goodie_spawn_probability;
   /// below is a tick counter
-  int ticks_since_protester_created;
+  unsigned int ticks_since_protester_created;
   bool isTheFirstTick = false;
   
 public:
@@ -38,7 +37,6 @@ public:
     
     /// initialize iceman
     ice_man = std::make_shared<Iceman>(this);
-    ice_man->setVisible(true);
 
     /// initialize score board
     setDisplayText();
@@ -50,13 +48,14 @@ public:
     target_num_protester = std::min(15, int(2 + getLevel() * 1.5)); /// protester
     
     /// make enough size for vector -> save memory and time
-    actors.reserve(L + B + G + 10); /// 10 represents sonar & water + extra
+    actors.reserve(L + B + G + 10); /// 10 represents sonar & water + extra space
     protesters.reserve(target_num_protester);
 
     /// initialize oil
     while (L > 0) {
       int x = rand() % 61, y = rand() % 57;
       
+      /// if x and y are in the middle aisel or if there's already other item, regenerate random num
       if (x >= 26 && x <= 33 && y >= 1) continue;
       if (isOccupied(x, y, 6.0f)) continue;
       
@@ -69,7 +68,6 @@ public:
     while (B > 0) {
       int x = rand() % 61, y = rand() % 37 + 20;
       
-      /// if x and y are in the middle aisel or if there's already other item, regenerate random num
       if (x >= 26 && x <= 33) continue;
       if (isOccupied(x, y, 6.0f)) continue;
       
@@ -120,6 +118,7 @@ public:
     }
     ice_man->doSomething();
     
+    
     /// if ice_man died
     if (ice_man->getHP() <= 0) {
       decLives();
@@ -131,6 +130,7 @@ public:
       playSound(SOUND_FINISHED_LEVEL);
       return GWSTATUS_FINISHED_LEVEL;
     }
+    
     
     /// deallocate dead actors
     for (int i = 0; i < actors.size(); ++i) {
@@ -156,10 +156,10 @@ public:
               int x = rand() % 58;
               int y = rand() % 58;
               if (!canAddWater(x, y)) continue;
-              if (!isOccupied(x, y, 4.0f)) {
-                actors.emplace_back(std::make_shared<Water>(x, y, this));
-                break;
-              }
+              if (isOccupied(x, y, 4.0f)) continue;
+              
+              actors.emplace_back(std::make_shared<Water>(x, y, this));
+              break;
             }
         }
     }
@@ -168,7 +168,7 @@ public:
     if (isTheFirstTick || ticks_since_protester_created >= std::max(25, 200 - (int)getLevel())) {
       isTheFirstTick = false;
       
-      if (protesters.size() < target_num_protester) { /// if curr num_protester in field is less than max creatable protester num, recount time)
+      if (protesters.size() < target_num_protester) { /// if curr num_protester in field is less than max creatable protester num, recount time
         (rand() % 101 <= hardcore_spawn_probability) ?
           protesters.emplace_back(std::make_shared<HardProtester>(this))
           : protesters.emplace_back(std::make_shared<RegProtester>(this));
@@ -176,7 +176,7 @@ public:
         ticks_since_protester_created = 0;
       }
     }
-    else if (protesters.size() < target_num_protester) ++ticks_since_protester_created;
+    else if (protesters.size() < target_num_protester) { ++ticks_since_protester_created; }
     
     return GWSTATUS_CONTINUE_GAME;
 	}
@@ -226,11 +226,11 @@ public:
   void discoverGoodies(const int& manX, const int& manY); /// using sonar
   void dropGold(const int& manX, const int& manY); /// using gold
   void squirtWater(const int& manX, const int& manY, const Actor::Direction& dir); /// using water
-  bool bonkIceman(const int& boulderX, const int& boulderY);
 
   bool bribeProtester(const int& goldX, const int& goldY);
   bool shootProtester(const int& waterX, const int& waterY);
   void bonkProtester(const int& boulderX, const int& boulderY);
+  bool bonkIceman(const int& boulderX, const int& boulderY);
   
   void shoutAtIceman() { playSound(SOUND_PROTESTER_YELL); ice_man->getAnnoyed(2); }
   bool canSeeIceman(const int& protX, const int& protY, const int& manX, const int& manY, Actor::Direction& dir) const;

@@ -7,8 +7,8 @@ GameWorld* createStudentWorld(std::string assetDir)
 
 std::string StudentWorld::setPrecision(const unsigned int& val, const unsigned int& precision, const char&& placeholder) const {
   int digit = (val < 10) ? 1 : int(log10(val) + 1); /// prevent log10(0) error
-  if (digit > precision) return std::to_string(val); /// if val is longer than the given precision, just print val
-  else return std::string(precision - digit, placeholder).append(std::to_string(val));
+  if (digit > precision) { return std::to_string(val); } /// if val is longer than the given precision, just print val
+  else { return std::string(precision - digit, placeholder).append(std::to_string(val)); }
 }
 
 void StudentWorld::setDisplayText() {
@@ -21,7 +21,7 @@ void StudentWorld::setDisplayText() {
 }
 
 
-void StudentWorld::initIce() {
+inline void StudentWorld::initIce() {
     for (int x = 0; x < 64; ++x) {
         for (int y = 0; y < 64; ++y) {
             ice[x][y] = std::make_shared<Ice>(x, y, this);
@@ -117,7 +117,7 @@ bool StudentWorld::isBouldery(const int& x, const int& y, const int& dir) const 
   for (const auto& actor : actors) {
     if (!actor->isAlive()) continue;
     
-    if (typeid(Boulder) == typeid(*actor) && isInRange(x, y, actor->getX(), actor->getY(), 4.0f)) {
+    if (typeid(Boulder) == typeid(*actor) && isInRange(x, y, actor->getX(), actor->getY(), 4.0f) && actor->getState() != FALL) {
       switch (dir) {
         case Actor::up :
           if (actor->getY() > y) { return true; }
@@ -300,7 +300,7 @@ bool StudentWorld::canSeeIceman(const int& protX, const int& protY, const int& m
       }
       break;
       
-    default: throw;
+    default: throw; // THIS IS FOR DEBUG
   }
   
   dir = direction;
@@ -325,7 +325,7 @@ bool StudentWorld::isAtJunction(const int& x, const int& y, const Actor::Directi
       }
       break;
       
-    default: throw;
+    default: throw; // THIS IS FOR DEBUG
   }
   return false;
 }

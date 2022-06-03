@@ -84,14 +84,10 @@ void Iceman::doSomething() {
   }
 }
 
-void Iceman::getAnnoyed(unsigned int damage) {
-  dropHP(damage);
-}
-
 
 /*================ PROTESTER ================*/
-void Protester::findShortestPath(int startX, int startY, int finalX, int finalY) {
-  std::queue<std::pair<int, int>> xy;
+void Protester::findShortestPath(const int startX, const int startY, const int finalX, const int finalY) {
+  std::queue<std::pair<int,int>> xy;
   int currStep = 0, currX, currY;
   
   stepArray[finalX][finalY] = 0;
@@ -111,33 +107,26 @@ void Protester::findShortestPath(int startX, int startY, int finalX, int finalY)
     currStep = stepArray[currX][currY];
     ++currStep;
     
-    if (currY < 60 && !getWorld()->isIcyOrBouldery(currX, currY, up) &&
-        stepArray[currX][currY+1] == 9999)
-    {
+    if (!getWorld()->isIcyOrBouldery(currX, currY, up) && stepArray[currX][currY+1] == 9999) {
       stepArray[currX][currY+1] = currStep;
       xy.push(std::make_pair(currX, currY+1));
     }
-    if (currY > 0 && !getWorld()->isIcyOrBouldery(currX, currY, down) &&
-        stepArray[currX][currY-1] == 9999)
-    {
+    if (!getWorld()->isIcyOrBouldery(currX, currY, down) && stepArray[currX][currY-1] == 9999) {
       stepArray[currX][currY-1] = currStep;
       xy.push(std::make_pair(currX, currY-1));
     }
-    if (currX < 60 && !getWorld()->isIcyOrBouldery(currX, currY, right) &&
-        stepArray[currX+1][currY] == 9999)
-    {
+    if (!getWorld()->isIcyOrBouldery(currX, currY, right) && stepArray[currX+1][currY] == 9999) {
       stepArray[currX+1][currY] = currStep;
       xy.push(std::make_pair(currX+1, currY));
     }
-    if (currX > 0 && !getWorld()->isIcyOrBouldery(currX, currY, left) &&
-        stepArray[currX-1][currY] == 9999)
-    {
+    if (!getWorld()->isIcyOrBouldery(currX, currY, left) && stepArray[currX-1][currY] == 9999) {
       stepArray[currX-1][currY] = currStep;
       xy.push(std::make_pair(currX-1, currY));
     }
   } /// end of while loop
   
-  didFindPath = false;
+//  didFindPath = false;
+  throw; // THIS IS FOR DEBUG
   return;
 }
 
@@ -173,7 +162,7 @@ void RegProtester::doSomething() {
         if (stalled_ticks == 0) { /// when finished being stalled
           setStalledTicks();
           setState(STAY);
-          setRestingTicks_0();
+          recountRestingTicks();
         }
         else {
           --stalled_ticks;
@@ -210,7 +199,6 @@ void RegProtester::doSomething() {
             moveTo(getX()-1, getY());
             --step;
           }
-
         }
         break;
         
@@ -223,10 +211,10 @@ void RegProtester::doSomething() {
         
         /// 4) if iceman is close enough and protester is facing him
         if (canShout && getWorld()->isInRange(getX(), getY(), icemanX, icemanY, 4.0f)) {
-          if ((getDirection() == up && getY() <= icemanY) ||
-              (getDirection() == down && getY() >= icemanY) ||
+          if ((getDirection() == up    && getY() <= icemanY) ||
+              (getDirection() == down  && getY() >= icemanY) ||
               (getDirection() == right && getX() <= icemanX) ||
-              (getDirection() == left && getX() >= icemanX))
+              (getDirection() == left  && getX() >= icemanX))
           {
                 getWorld()->shoutAtIceman();
                 canShout = false;
@@ -267,14 +255,10 @@ void RegProtester::doSomething() {
           if (move_straight_distance <= 0) {
             while (true) {
               int dir = rand() % 4 + 1; /// pick a random direction(1-4)
-              if (getWorld()->isIcyOrBouldery(getX(), getY(), (Direction)dir)) {
-                continue;
-              }
-              else {
-                setDirection((Direction)dir);
-                pickMoveStraightDistance();
-                break; /// continue with step 8
-              }
+              if (getWorld()->isIcyOrBouldery(getX(), getY(), (Direction)dir)) continue;
+              setDirection((Direction)dir);
+              pickMoveStraightDistance();
+              break; /// continue with step 8
             }
           }
           
@@ -332,7 +316,7 @@ void RegProtester::doSomething() {
               moveTo(getX()+1, getY()); break;
             case left :
               moveTo(getX()-1, getY()); break;
-            default: throw;
+            default: throw; // THIS IS FOR DEBUG
           }
           --move_straight_distance;
         }
@@ -352,7 +336,7 @@ void HardProtester::doSomething() {
         if (stalled_ticks == 0) { /// when finished being stalled
           setStalledTicks();
           setState(STAY);
-          setRestingTicks_0();
+          recountRestingTicks();
         }
         else {
           --stalled_ticks;
@@ -445,47 +429,48 @@ void HardProtester::doSomething() {
         else { /// if protester can't directly see the iceman
           
           /// 5) if protester is less than or equal to a total of M legal horizontal or vertical moves away from the curr iceman location
-          int M = 16 + getWorld()->getLevel() * 2;
-          findShortestPath(getX(), getY(), getWorld()->getIce_man()->getX(), getWorld()->getIce_man()->getY());
-          didFindPath = false; /// if the state is changed to "LEAVE" on the next tick, stepArray has to be recalculated, so set didFindPath to false
-          if (step <= M) {
-            if (step - 1 == stepArray[getX()][getY()+1]) {
-              setDirection(up);
-              moveTo(getX(), getY()+1);
-              --step;
+          int_ M = 16 + getWorld()->getLevel() * 2;
+          int_ manX = getWorld()->getIce_man()->getX();
+          int_ manY =  getWorld()->getIce_man()->getY();
+          
+          if (getWorld()->isInRange(getX(), getY(), manX, manY, M)) {
+            findShortestPath(getX(), getY(), manX, manY);
+            bool didHearIceman = false;
+            if (step <= M) {
+              didHearIceman = true;
+              if (step - 1 == stepArray[getX()][getY()+1]) {
+                setDirection(up);
+                moveTo(getX(), getY()+1);
+                --step;
+              }
+              else if (step - 1 == stepArray[getX()][getY()-1]) {
+                setDirection(down);
+                moveTo(getX(), getY()-1);
+                --step;
+              }
+              else if (step - 1 == stepArray[getX()+1][getY()]) {
+                setDirection(right);
+                moveTo(getX()+1, getY());
+                --step;
+              }
+              else if (step - 1 == stepArray[getX()-1][getY()]) {
+                setDirection(left);
+                moveTo(getX()-1, getY());
+                --step;
+              }
             }
-            else if (step - 1 == stepArray[getX()][getY()-1]) {
-              setDirection(down);
-              moveTo(getX(), getY()-1);
-              --step;
-            }
-            else if (step - 1 == stepArray[getX()+1][getY()]) {
-              setDirection(right);
-              moveTo(getX()+1, getY());
-              --step;
-            }
-            else if (step - 1 == stepArray[getX()-1][getY()]) {
-              setDirection(left);
-              moveTo(getX()-1, getY());
-              --step;
-            }
-            setStepArray(); /// stepArray has to be reset to 9999 because iceman's x,y could keep changing
-            return;
+            setStepArray(); /// reset stepArray to 9999 to recalculate the shortest path on the next tick
+            if (didHearIceman) { return; }
           }
-          setStepArray(); /// reset stepArray to 9999 for the next tick even though (step > M) and didn't move toward to iceman
           
           /// 7) if MoveStraightDistance <=  0
           if (move_straight_distance <= 0) {
             while (true) {
               int dir = rand() % 4 + 1; /// pick a random direction(1-4)
-              if (getWorld()->isIcyOrBouldery(getX(), getY(), (Direction)dir)) {
-                continue;
-              }
-              else {
-                setDirection((Direction)dir);
-                pickMoveStraightDistance();
-                break; /// continue with step 8
-              }
+              if (getWorld()->isIcyOrBouldery(getX(), getY(), (Direction)dir)) continue;
+              setDirection((Direction)dir);
+              pickMoveStraightDistance();
+              break;
             }
           }
           
@@ -614,7 +599,7 @@ void Sonar::doSomething() {
     return;
   }
   
-  if (life_time == std::max(100, 300 - 10 * (int)getWorld()->getLevel())) { // need improvement
+  if (life_time >= std::max(100, 300 - 10 * (int)getWorld()->getLevel())) { // need improvement
     setDead();
   }
   else { ++life_time; }
@@ -630,7 +615,7 @@ void Water::doSomething() {
     return;
   }
   
-  if (life_time == std::max(100, 300 - 10 * (int)getWorld()->getLevel())) { // need improvement
+  if (life_time >= std::max(100, 300 - 10 * (int)getWorld()->getLevel())) { // need improvement
     setDead();
   }
   else { ++life_time; }
@@ -697,7 +682,7 @@ void Squirt::doSomething() {
       case Actor::left :
         moveTo(getX()-1, getY());
         break;
-      default: throw;
+      default: throw; // THIS IS FOR DEBUG
     }
   }
 }

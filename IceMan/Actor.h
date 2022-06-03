@@ -105,7 +105,9 @@ protected:
   
 public:
   Protester(int imageID, StudentWorld* stud_world)
-  : Character(imageID, 60, 60, stud_world, left, 1, 0) { pickMoveStraightDistance(); setRestingTicks(); setStalledTicks(); setStepArray(); }
+    : Character(imageID, 60, 60, stud_world, left, 1, 0) {
+    pickMoveStraightDistance(); setRestingTicks(); setStalledTicks(); setStepArray();
+  }
   virtual ~Protester() {}
   virtual void doSomething() override = 0;
   virtual void getAnnoyed(unsigned int damage) override;

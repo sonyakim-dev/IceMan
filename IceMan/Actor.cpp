@@ -187,7 +187,7 @@ void RegProtester::doSomething() {
         if (getX() == 60 && getY() == 60) { setDead(); break; }
         
         if (!didFindPath) {
-          findShortestPath(getX(), getY(), 60, 60); /// set step array only once
+          findShortestPath(getX(), getY(), 60, 60); /// this is for setting stepArray only once!
         }
         if (didFindPath) {
           if (step - 1 == stepArray[getX()][getY()+1]) {
@@ -447,7 +447,7 @@ void HardProtester::doSomething() {
           /// 5) if protester is less than or equal to a total of M legal horizontal or vertical moves away from the curr iceman location
           int M = 16 + getWorld()->getLevel() * 2;
           findShortestPath(getX(), getY(), getWorld()->getIce_man()->getX(), getWorld()->getIce_man()->getY());
-          didFindPath = false;
+          didFindPath = false; /// if the state is changed to "LEAVE" on the next tick, stepArray has to be recalculated, so set didFindPath to false
           if (step <= M) {
             if (step - 1 == stepArray[getX()][getY()+1]) {
               setDirection(up);
@@ -469,10 +469,10 @@ void HardProtester::doSomething() {
               moveTo(getX()-1, getY());
               --step;
             }
-            setStepArray();
+            setStepArray(); /// stepArray has to be reset to 9999 because iceman's x,y could keep changing
             return;
           }
-          setStepArray();
+          setStepArray(); /// reset stepArray to 9999 for the next tick even though (step > M) and didn't move toward to iceman
           
           /// 7) if MoveStraightDistance <=  0
           if (move_straight_distance <= 0) {

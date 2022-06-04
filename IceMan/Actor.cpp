@@ -124,8 +124,7 @@ void Protester::findShortestPath(const int startX, const int startY, const int f
       xy.push(std::make_pair(currX-1, currY));
     }
   } /// end of while loop
-  
-//  didFindPath = false;
+
   throw; // THIS IS FOR DEBUG
   return;
 }
@@ -149,6 +148,16 @@ bool Protester::isTimeToMove() {
   }
   else { return false; }
 }
+
+void Protester::setStepArray() {
+  didFindPath = false;
+  for (int i = 0; i < 64; ++i) {
+    for (int j = 0; j < 64; ++j) {
+      stepArray[i][j] = 9999;
+    }
+  }
+}
+
 void Protester::setRestingTicks() { resting_ticks = std::max(0, 3 - (int)getWorld()->getLevel() / 4); }
 void Protester::setStalledTicks() { stalled_ticks = std::max(50, 100 - (int)getWorld()->getLevel() * 10); }
 
@@ -162,7 +171,7 @@ void RegProtester::doSomething() {
         if (stalled_ticks == 0) { /// when finished being stalled
           setStalledTicks();
           setState(STAY);
-          recountRestingTicks();
+          resting_ticks = 0;
         }
         else {
           --stalled_ticks;
@@ -182,23 +191,20 @@ void RegProtester::doSomething() {
           if (step - 1 == stepArray[getX()][getY()+1]) {
             setDirection(up);
             moveTo(getX(), getY()+1);
-            --step;
           }
           else if (step - 1 == stepArray[getX()][getY()-1]) {
             setDirection(down);
             moveTo(getX(), getY()-1);
-            --step;
           }
           else if (step - 1 == stepArray[getX()+1][getY()]) {
             setDirection(right);
             moveTo(getX()+1, getY());
-            --step;
           }
           else if (step - 1 == stepArray[getX()-1][getY()]) {
             setDirection(left);
             moveTo(getX()-1, getY());
-            --step;
           }
+          --step;
         }
         break;
         
@@ -323,7 +329,7 @@ void RegProtester::doSomething() {
         break; /// end of STAY state
     }
   }
-  else { countRestingTicks(); return; }
+  else { --resting_ticks; return; }
 }
 
 /*================ HARD PROTESTER ================*/
@@ -336,7 +342,7 @@ void HardProtester::doSomething() {
         if (stalled_ticks == 0) { /// when finished being stalled
           setStalledTicks();
           setState(STAY);
-          recountRestingTicks();
+          resting_ticks = 0;
         }
         else {
           --stalled_ticks;
@@ -356,24 +362,20 @@ void HardProtester::doSomething() {
           if (step - 1 == stepArray[getX()][getY()+1]) {
             setDirection(up);
             moveTo(getX(), getY()+1);
-            --step;
           }
           else if (step - 1 == stepArray[getX()][getY()-1]) {
             setDirection(down);
             moveTo(getX(), getY()-1);
-            --step;
           }
           else if (step - 1 == stepArray[getX()+1][getY()]) {
             setDirection(right);
             moveTo(getX()+1, getY());
-            --step;
           }
           else if (step - 1 == stepArray[getX()-1][getY()]) {
             setDirection(left);
             moveTo(getX()-1, getY());
-            --step;
           }
-
+          --step;
         }
         break;
         
@@ -535,7 +537,7 @@ void HardProtester::doSomething() {
         break; /// end of STAY state
     }
   }
-  else { countRestingTicks(); return; }
+  else { --resting_ticks; return; }
 }
 
 
@@ -599,7 +601,7 @@ void Sonar::doSomething() {
     return;
   }
   
-  if (life_time >= std::max(100, 300 - 10 * (int)getWorld()->getLevel())) { // need improvement
+  if (life_time >= std::max(100, 300 - 10 * (int)getWorld()->getLevel())) { // may improve
     setDead();
   }
   else { ++life_time; }
@@ -615,7 +617,7 @@ void Water::doSomething() {
     return;
   }
   
-  if (life_time >= std::max(100, 300 - 10 * (int)getWorld()->getLevel())) { // need improvement
+  if (life_time >= std::max(100, 300 - 10 * (int)getWorld()->getLevel())) {
     setDead();
   }
   else { ++life_time; }

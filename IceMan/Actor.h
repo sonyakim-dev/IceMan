@@ -77,32 +77,23 @@ public:
 class Protester : public Character {
 private:
   bool can_move = true;
-  unsigned int resting_ticks;
 protected:
   unsigned int move_straight_distance; /// numSquresToMoveInCurrentDirection
+  unsigned int resting_ticks;
   unsigned int stalled_ticks;
   bool canShout = true;
   unsigned int ticks_since_shout {0};
   bool canTurn = true;
   unsigned int ticks_since_turn {0};
-  int_ stepArray[64][64];
   bool didFindPath = false;
+  int_ stepArray[64][64];
   int step {0};
 
   virtual void pickMoveStraightDistance() { move_straight_distance = rand() % 53 + 8; } /// 8 <= rand <= 60
-  virtual void setStalledTicks();
   virtual bool isTimeToMove();
   virtual void setRestingTicks();
-  virtual void countRestingTicks() { --resting_ticks; }
-  virtual void recountRestingTicks() { resting_ticks = 0; }
-  virtual void setStepArray() {
-    didFindPath = false;
-    for (int i = 0; i < 64; ++i) {
-      for (int j = 0; j < 64; ++j) {
-        stepArray[i][j] = 9999;
-      }
-    }
-  }
+  virtual void setStalledTicks();
+  virtual void setStepArray();
   
 public:
   Protester(int imageID, StudentWorld* stud_world)
@@ -145,7 +136,7 @@ public:
 class Oil : public Goodies {
 public:
     Oil(int startX, int startY, StudentWorld* stud_world)
-      : Goodies(IID_BARREL, startX, startY, stud_world, right, 1, 2) { setVisible(true); }
+      : Goodies(IID_BARREL, startX, startY, stud_world, right, 1, 2) { setVisible(false); }
     virtual ~Oil() {}
     virtual void doSomething() override;
 };
@@ -153,7 +144,9 @@ public:
 class Gold : public Goodies {
 public:
     Gold(int startX, int startY, StudentWorld* stud_world, State condition = PERM)
-      : Goodies(IID_GOLD, startX, startY, stud_world, right, 1, 2) { setState(condition); (condition == TEMP) ? setVisible(true) : setVisible(false);}
+      : Goodies(IID_GOLD, startX, startY, stud_world, right, 1, 2) {
+        setState(condition); (condition == TEMP) ? setVisible(true) : setVisible(false);
+    }
     virtual ~Gold() {}
     virtual void doSomething() override;
 private:

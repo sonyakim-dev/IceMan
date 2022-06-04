@@ -21,8 +21,8 @@ private:
   unsigned int hardcore_spawn_probability;
   unsigned int goodie_spawn_probability;
   /// below is a tick counter
-  unsigned int ticks_since_protester_created;
-  bool isTheFirstTick = false;
+  unsigned int ticks_since_protester_created {0};
+  bool isTheFirstTick;
   
 public:
 	StudentWorld(std::string assetDir) : GameWorld(assetDir) {}

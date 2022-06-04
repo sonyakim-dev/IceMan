@@ -186,11 +186,12 @@ void StudentWorld::squirtWater(const int& x, const int& y, const Actor::Directio
       actors.emplace_back(std::make_shared<Squirt>(x-4, y, this, dir));
       break;
       
-    default: throw;
+    default: throw; // THIS IS FOR DEBUG
   }
 }
 
 void StudentWorld::discoverGoodies(const int& x, const int& y) {
+  playSound(SOUND_SONAR);
   ice_man->useSonar();
   for (const auto& actor : actors) {
     if (typeid(*actor) == typeid(Gold) || typeid(*actor) == typeid(Oil)) {

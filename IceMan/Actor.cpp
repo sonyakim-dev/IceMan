@@ -437,9 +437,7 @@ void HardProtester::doSomething() {
           
           if (getWorld()->isInRange(getX(), getY(), manX, manY, M)) {
             findShortestPath(getX(), getY(), manX, manY);
-            bool didHearIceman = false;
             if (step <= M) {
-              didHearIceman = true;
               if (step - 1 == stepArray[getX()][getY()+1]) {
                 setDirection(up);
                 moveTo(getX(), getY()+1);
@@ -460,9 +458,10 @@ void HardProtester::doSomething() {
                 moveTo(getX()-1, getY());
                 --step;
               }
+              setStepArray();
+              return;
             }
             setStepArray(); /// reset stepArray to 9999 to recalculate the shortest path on the next tick
-            if (didHearIceman) { return; }
           }
           
           /// 7) if MoveStraightDistance <=  0

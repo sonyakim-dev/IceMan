@@ -16,6 +16,9 @@ b. Option 2: Install the [homebrew](http://brew.sh/) package manager. Then run t
 3. In terminal: `git clone https://github.com/sonyakim-dev/CS30-Project4-IceMan.git`
 4. Open the project in Xcode and run it.
 
+## Class Inheritance
+<img src="https://images.squarespace-cdn.com/content/v1/617b6cd0307104208b1262eb/456d0f81-618b-4df0-b7f1-f695eec01de5/Mind+Map.jpeg?format=2500w" width=1000/>
+
 ## Sample Screen
 <img src="https://github.com/sonyakim-dev/CS30-Project4-IceMan/blob/main/iceman-sample.png?raw=true" width=500/>
 

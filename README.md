@@ -19,8 +19,9 @@ b. Option 2: Install the [homebrew](http://brew.sh/) package manager. Then run t
 ## Class Inheritance
 <img src="https://images.squarespace-cdn.com/content/v1/617b6cd0307104208b1262eb/456d0f81-618b-4df0-b7f1-f695eec01de5/Mind+Map.jpeg?format=2500w" width=1000/>
 
-## Sample Screen
-<img src="https://github.com/sonyakim-dev/CS30-Project4-IceMan/blob/main/iceman-sample.png?raw=true" width=500/>
-
 ## Video Demo
+
+https://user-images.githubusercontent.com/96547645/187056275-a9cec147-db40-40e4-8c28-ad74469005f0.mp4
+
+
 [Youtube Link](https://youtu.be/mTAIY-mC8tI)
